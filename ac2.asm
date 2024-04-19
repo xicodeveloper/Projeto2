@@ -10,8 +10,32 @@ CaracterVazio 	 		EQU 20 			;limpa o ecra
 PepeCartaoInicio EQU 53H
 PepeCartaoFim    EQU 59H
 CartaoEndreco EQU 0230H
+
+
+TabelaCartoesInicio 	EQU	4000H
+;código único de  5 caracteres  - 5 bytes (Ex: XXXXX)
+; saldo disponivel				- 5 bytes (Ex: 1 5 , 0 0)
+TabelaCartoesFim 		EQU	4000H; Guarda 5 cartões de 
 ;SP
 StackPointer 	EQU 6000H ;Endereço onde começa a Stack Pointer
+
+Place TabelaCartoesInicio
+String "XXXXX"
+String "00,00"
+
+String "XXXXX"
+String "00,00"
+
+String "XXXXX"
+String "00,00"
+
+String "XXXXX"
+String "00,00"
+
+String "XXXXX"
+String "00,00"
+
+
 
 Place 200H
 MenuPrincipal:
@@ -213,8 +237,8 @@ Place 3000H
 Principio:
 	MOV SP, StackPointer				;Stack Pointer onde esta a pilha
 	MOV R2, MenuPrincipal				;Carrega o endereço do menu principal
-	CALL MostrarDisplay					;Mostra o menu principal
 	CALL LimpaDisplay					;Limpa o Display de saida onde estara a nossa interface
+	CALL LimpaPerifericos				;limpa os perifericos
 	MOV R0,ON_OFF        				;move o endreço de ON_OFF para r0
 	Liga:                    			; liga Maquina   
 		MOVB R1,[R0]         			; passa o byte no endereço para R1 
@@ -244,7 +268,7 @@ Principio:
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
 	JEQ	MPepeContinuar 					;Opção Cartao para continuar	
-	CMP R1, 5						;Compara com o valor de saida 7
+	CMP R1, 5						;Compara com o valor de saida 5
 	JEQ ligado					;Caso seja igual volta para o inicio
 	JMP Le_Cart						;Caso nao seja selecionado nenhum valor de PER_EN valido, o mesmo fica num ciclo
 	
@@ -275,7 +299,9 @@ Stock:
 	JEQ ligado					;Caso seja igual é feito um salto para o ligado do programa
 	CALL Stocks						;Chama a Rotina Stocks(Que mostra a lista do Stock de troco)
 	JMP ligado					;Salta para o ligado
-	
+
+
+;------------------------------------------------
 MComparBilhete:
 	MOV R2, Menu_Estacoes			;Carrega o endereço do menu de estaçoes
 	CALL MostrarDisplay				;Mostra o menu de estaçoes
