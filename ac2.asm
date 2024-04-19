@@ -1,9 +1,11 @@
 ; Perifericos de Entrada
 PER_EN EQU 30H		;Endereço do PER_EN
+ON_OFF  				EQU 1A0H        	;BOTAO ON/OFF
 
 ; Periferico de Saida
 Display 	EQU 40H  ;Endereço onde começa o display
 Display_end EQU 175  ;Endereço onde termina o display
+CaracterVazio 	 		EQU 20 			;limpa o ecra
 
 ;SP
 StackPointer 	EQU 6000H ;Endereço onde começa a Stack Pointer
@@ -14,7 +16,7 @@ MenuPrincipal:
 	String "METRO           "
 	String "1-COMPRAR       "
 	String "2-USAR CARTAO   "
-	String "3-STOCK (2)     "
+	String "3-STOCK         "
 	String "                "
 	String "                "
 	
@@ -110,20 +112,20 @@ StockIni:
 	
 Place 700H
 Stock1:
-	String "-- Stock 1/5 ---"
-	String "b1       0099   "
-	String "b2         0099 "
-	String "b3       0099   "
-	String "b4        0099  "
+	String "--Bilhete1/2 ---"
+	String "Almada      0000"
+	String "Ponte       0000"
+	String "Lisbo       0099"
+	String "Douro     0099  "
 	String "1) Seguinte     "
 	String "2) Sair         "
 	
 Place 780H
 Stock2:
 	String "-- Stock 2/5 ---"
-	String "Monster     0099"
-	String "lol         0099"
-	String "lul         0099"
+	String "Gaia        0099"
+	String "Douro       0099"
+	String "Dragao      0099"
 	String "mal         0099"
 	String "1) Seguinte     "
 	String "2) Anterior     "
@@ -140,7 +142,7 @@ Stock3:
 	
 Place 880H
 Stock4:
-	String "-- Stock 4/5 ---"
+	String "-- Stock 1/2 ---"
 	String "5,00        0001"
 	String "2,00        0099"
 	String "1,00        0099"
@@ -150,7 +152,7 @@ Stock4:
 
 Place 900H
 Stock5:
-	String "-- Stock 5/5 ---"
+	String "-- Stock 2/2 ---"
 	String "0,20        0099"
 	String "0,10        0099"
 	String "                "
@@ -206,32 +208,41 @@ Inicio:
 	
 Place 3000H
 Principio:
-	MOV SP, StackPointer			;Stack Pointer
-	MOV R2, MenuPrincipal			;Carrega o endereço do menu principal
-	CALL MostrarDisplay				;Mostra o menu principal
-	CALL LimpaPerifericos			;Limpa os perifericos
-Le_PER_EN:
-	MOV R0, PER_EN					;Le o endereço onde esta o PER_EN
-	MOVB R1, [R0]					;Le o PER_EN da memoria
-	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	MProdutos 					;Opção Produtos	
-	CMP R1, 2						;Compara o PER_EN com o valor 2
-	JEQ MCartao						;Opcão Stock
-	CMP R1, 3						;Compara o PER_EN com o valor 2
-	JEQ Stock						;Opcão Stock
+	MOV SP, StackPointer				;Stack Pointer onde esta a pilha
+	MOV R2, MenuPrincipal				;Carrega o endereço do menu principal
+	CALL MostrarDisplay					;Mostra o menu principal
+	CALL LimpaDisplay					;Limpa o Display de saida onde estara a nossa interface
+	MOV R0,ON_OFF        				;move o endreço de ON_OFF para r0
+	Liga:                    			; liga Maquina   
+		MOVB R1,[R0]         			; passa o byte no endereço para R1 
+		CMP R1,1						;Se for 1 liga
+		JNE Liga
+	ligado:                 		; mostra o menu inicial 
+		MOV R2,MenuPrincipal 
+		CALL MostrarDisplay
+		CALL LimpaPerifericos		;limpa os perifericos
+	Le_PER_EN:
+		MOV R0, PER_EN					;Le o endereço onde esta o PER_EN
+		MOVB R1, [R0]					;Le o PER_EN da memoria
+		CMP R1, 1						;Compara o PER_EN com o valor 1
+		JEQ	MComparBilhete 					;Opção Comaprar	
+		CMP R1, 2						;Compara o PER_EN com o valor 2
+		JEQ MCartao						;Opcão Usar Cartao
+		CMP R1, 3						;Compara o PER_EN com o valor 3
+		JEQ Stock						;Opcão Stock
 	JMP Le_PER_EN					;Caso nao tenha sido introduzido nenhum valor de PER_EN valido, o mesmo fica num ciclo
 	
 	MCartao:
-	MOV R2, MenuCodigoPepe			;Carrega o endereço do menu de produtos
-	CALL MostrarDisplay				;Mostra o menu de produtos
-	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-Le_Cart:
+		MOV R2, MenuCodigoPepe			;Carrega o endereço do menu de produtos
+		CALL MostrarDisplay				;Mostra o menu de produtos
+		CALL LimpaPerifericos			;Limpa os perifericos de entrada
+	Le_Cart:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	MPepeContinuar 					;Opção Bebidas	
+	JEQ	MPepeContinuar 					;Opção Cartao para continuar	
 	CMP R1, 5						;Compara com o valor de saida 7
-	JEQ Principio					;Caso seja igual volta para o inicio
+	JEQ ligado					;Caso seja igual volta para o inicio
 	JMP Le_Cart						;Caso nao seja selecionado nenhum valor de PER_EN valido, o mesmo fica num ciclo
 	
 MPepeContinuar:
@@ -242,7 +253,7 @@ Le_Cart2:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	 MProdutos					;Opção Bebidas	
+	JEQ	 MComparBilhete					;Opção MComparBilhete	
 	CMP R1, 5						;Compara com o valor de saida 7
 	JEQ MRecarregar					;Caso seja igual volta para o inicio
 	JMP Le_Cart2			
@@ -250,119 +261,116 @@ Le_Cart2:
 
 
 MRecarregar:
-JMP Principio
+JMP ligado
 Stock:
 	CALL InicStock					;Chama a Rotina de Stock inicial(para por a palavra pass)
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Move para R1 o valor de PER_EN
 	CMP R1, 2						;Compara o valor com 2
-	JEQ Principio					;Caso seja igual é feito um salto para o principio do programa
-	CALL Stocks						;Chama a Rotina Stocks(Que mostra a lista do Stock da maquina de vendas)
-	JMP Principio					;Salta para o principio
+	JEQ ligado					;Caso seja igual é feito um salto para o ligado do programa
+	CALL Stocks						;Chama a Rotina Stocks(Que mostra a lista do Stock de troco)
+	JMP ligado					;Salta para o ligado
 	
-MProdutos:
-	MOV R2, Menu_Estacoes			;Carrega o endereço do menu de produtos
-	CALL MostrarDisplay				;Mostra o menu de produtos
+MComparBilhete:
+	MOV R2, Menu_Estacoes			;Carrega o endereço do menu de estaçoes
+	CALL MostrarDisplay				;Mostra o menu de estaçoes
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
 Le_Prod:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	MBebidas 					;Opção Bebidas	
+	JEQ	MLisboa 					;Opção Lisboa	
 	CMP R1, 2						;Compara a PER_EN com o valor 2
-	JEQ MSnacks 					;Opção snacks
+	JEQ MPorto 					;Opção Porto
 	CMP R1, 7						;Compara com o valor de saida 7
-	JEQ Principio					;Caso seja igual volta para o inicio
+	JEQ ligado					;Caso seja igual volta para o inicio
 	JMP Le_Prod						;Caso nao seja selecionado nenhum valor de PER_EN valido, o mesmo fica num ciclo
 
-MSnacks:
-	MOV R2, Menu_Porto				;Move para R2 a posição do display do menu de snacks
-	CALL MostrarDisplay				;Mostra o menu de snacks
+MPorto:
+	MOV R2, Menu_Porto				;Move para R2 a posição do display do menu de Porto
+	CALL MostrarDisplay				;Mostra o menu de Porto
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
 	
-Le_snacks:
+Porto_ciclo:
 	MOV R0, PER_EN					;Le o endereço de memoria onde esta o PER_EN
 	MOVB R1, [R0]					;Le o conteudo do endereço de memoria do PER_EN
 	CMP R1, 1						;Compara com o nº1
-	JEQ CompraSnackUm				;Faz um salto para o comprar o 1 snack
+	JEQ EstacaoCompaPorto1				;Faz um salto para o comprar o 1 Porto
 	CMP R1, 2						;Compara com o nº2
-	JEQ CompraSnackDois				;Faz um salto para o comprar o 2 snack
+	JEQ EstacaoCompaPorto2				;Faz um salto para o comprar o 2 Porto
 	CMP R1, 3						;Compara com o nº3
-	JEQ aux2						;Faz um salto para o comprar o 3 snack
+	JEQ aux2						;Faz um salto para o comprar o 3 Porto
 	CMP R1, 7						;Compara com o valor para o menu seguinte
-	JEQ Proxsnac					;Faz um salto para o proximo menu de snacks
+	JEQ EstacaoPortoAseguir					;Faz um salto para o proximo menu de Porto
 	CMP R1, 0						;Comapra com o valor 0, valor de saida
-	JEQ Principio					;Caso seja igual volta para o principio
-	JMP Le_snacks					;Faz um loop ate o PER_EN ser valido
-Proxsnac:
-	MOV R2, Menu_Porto_2			;Move para R2 a posição do display do menu de snacks 2
-	CALL MostrarDisplay				;Mostra o menu de snacks 2
+	JEQ ligado					;Caso seja igual volta para o ligado
+	JMP Porto_ciclo					;Faz um loop ate o PER_EN ser valido
+EstacaoPortoAseguir:
+	MOV R2, Menu_Porto_2			;Move para R2 a posição do display do menu de Porto 2
+	CALL MostrarDisplay				;Mostra o menu de Porto 2
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-Le_snackSec:
+Porto_ciclo_2:
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 4						;Compara com o nº4
-	JEQ CompraSnackUm				;Faz um salto para o comprar o 4 snack(reutilização de codigo)
+	JEQ EstacaoCompaPorto1				;Faz um salto para o comprar o 4 Porto(reutilização de codigo)
 	CMP R1, 5						;Compara com o nº5
-	JEQ CompraSnackDois				;Faz um salto para o comprar o 5 snack(reutilização de codigo)
+	JEQ EstacaoCompaPorto2				;Faz um salto para o comprar o 5 Porto(reutilização de codigo)
 	CMP R1, 6						;Compara com o nº6
-	JEQ CompraSnackTres				;Faz um salto para o comprar o 6 snack(reutilização de codigo)
+	JEQ EstacaoCompaPorto3				;Faz um salto para o comprar o 6 Porto(reutilização de codigo)
 	CMP R1, 7						;Compara com o valor para o menu anterior
-	JEQ MSnacks						;Faz um salto para o menu de snacks anterior
+	JEQ MPorto						;Faz um salto para o menu de Porto anterior
 	CMP R1, 0						;Comapra com o valor 0, valor de saida
-	JEQ Principio					;Caso seja igual volta para o principio
-	JMP Le_snackSec					;Faz um loop ate o PER_EN ser valido
+	JEQ ligado					;Caso seja igual volta para o ligado
+	JMP Porto_ciclo_2					;Faz um loop ate o PER_EN ser valido
 	
-MBebidas:
-	MOV R2, Menu_Lisboa				;Move para R2 a posição do display do menu bebidas
-	CALL MostrarDisplay				;Mostra o display do menu de bebidas
+MLisboa:
+	MOV R2, Menu_Lisboa				;Move para R2 a posição do display do menu Lisboa
+	CALL MostrarDisplay				;Mostra o display do menu de Lisboa
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
-Le_Bebidas:
+M_Lisbon_ciclo:
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara com o nº1
-	JEQ CompraBebUm					;Faz um salto para o comprar a 1 bebida
+	JEQ EstacaoCompaLisboa1					;Faz um salto para o comprar a 1 Lisboa
 	CMP R1, 2						;Compara com o nº2
-	JEQ CompraBebDois				;Faz um salto para o comprar a 2 bebida
+	JEQ EstacaoCompaLisboa2				;Faz um salto para o comprar a 2 Lisboa
 	CMP R1, 3						;Compara com o nº3
-	JEQ CompraBebTres				;Faz um salto para o comprar a 3 bebida
+	JEQ EstacaoCompaLisboa3				;Faz um salto para o comprar a 3 Lisboa
 	CMP R1, 7						;Compara com o valor para o menu seguinte
-	JEQ ProxMen						;Faz um salto para o menu de bebidas seguinte
+	JEQ ProxLisboa					;Faz um salto para o menu de Lisboa seguinte
 	CMP R1, 0						;Comapra com o valor 0, valor de saida
-	JEQ Principio					;Caso seja igual volta para o principio
-	JMP Le_Bebidas					;Faz um loop ate o PER_EN ser valido
+	JEQ ligado					;Caso seja igual volta para o ligado
+	JMP M_Lisbon_ciclo					;Faz um loop ate o PER_EN ser valido
 	
-ProxMen:
-	MOV R2, Menu_Lisboa_2			;Move para R2 a posição do display do menu bebidas dois
-	CALL MostrarDisplay				;Mostra o display do menu de bebidas dois
+ProxLisboa:
+	MOV R2, Menu_Lisboa_2			;Move para R2 a posição do display do menu Lisboa dois
+	CALL MostrarDisplay				;Mostra o display do menu de Lisboa dois
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
-Le_BebidasSec:
+M_Lisbon_ciclo_2:
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 4						;Compara com o nº4
-	JEQ CompraBebUm					;Faz um salto para o comprar a 4 bebida (reutilização de codigo)
+	JEQ EstacaoCompaLisboa1					;Faz um salto para o comprar a 4 Lisboa (reutilização de codigo)
 	CMP R1, 5						;Compara com o nº5
-	JEQ CompraBebDois				;Faz um salto para o comprar a 5 bebida (reutilização de codigo)
+	JEQ EstacaoCompaLisboa2				;Faz um salto para o comprar a 5 Lisboa (reutilização de codigo)
 	CMP R1, 6						;Compara com o nº6
-	JEQ CompraBebTres				;Faz um salto para o comprar a 6 bebida (reutilização de codigo)
+	JEQ EstacaoCompaLisboa3				;Faz um salto para o comprar a 6 Lisboa (reutilização de codigo)
 	CMP R1, 7						;Compara com o valor para o menu anterior
-	JEQ MBebidas					;Faz um salto para o menu de bebidas anterior
+	JEQ MLisboa					;Faz um salto para o menu de Lisboa anterior
 	CMP R1, 0						;Comapra com o valor 0, valor de saida
-	JEQ Principio					;Caso seja igual volta para o principio
-	JMP Le_BebidasSec				;Faz um loop ate o PER_EN ser valido
+	JEQ ligado					;Caso seja igual volta para o ligado
+	JMP M_Lisbon_ciclo_2				;Faz um loop ate o PER_EN ser valido
 	
-aux:
-	JMP Principio					;Salto auxiliar, pois constantes out of bonds
-aux2:
-	JMP CompraSnackTres				;Salto auxiliar, pois constantes out of bonds
 
-CompraBebUm:
+aux2:
+	JMP EstacaoCompaPorto3				;Salto auxiliar, pois constantes out of bonds
+
+EstacaoCompaLisboa1:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 72H						;Move para R0 a posição do PER_EN 1 ou 4
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
-	CALL TiraStockBeb				;Chama a Rotina para tirar 1 de stock das bebidas
-	CALL stckERR					;Chama a Rotina de stock de erro caso nao tenha stock
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
@@ -371,13 +379,11 @@ CompraBebUm:
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
 	JMP cil							;Fica em loop ate continuar para o menu inicial
-CompraBebDois:
+EstacaoCompaLisboa2:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 82H						;Move para R0 a posição do PER_EN 2 ou 5
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
-	CALL TiraStockBeb				;Chama a Rotina para tirar 1 de stock das bebidas
-	CALL stckERR					;Chama a Rotina de stock de erro caso nao tenha stock
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
@@ -386,13 +392,11 @@ CompraBebDois:
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
 	JMP cil							;Fica em loop ate continuar para o menu inicial
-CompraBebTres:
+EstacaoCompaLisboa3:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 92H						;Move para R0 a posição do PER_EN 3 ou 6
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
-	CALL TiraStockBeb				;Chama a Rotina para tirar 1 de stock das bebidas
-	CALL stckERR					;Chama a Rotina de stock de erro caso nao tenha stock
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
@@ -402,13 +406,11 @@ CompraBebTres:
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
 	JMP cil							;Fica em loop ate continuar para o menu inicial
 	
-CompraSnackUm:
+EstacaoCompaPorto1:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 72H						;Move para R0 a posição do PER_EN 1 ou 4
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
-	CALL TiraStockSnack				;Chama a Rotina para tirar 1 de stock das snacks
-	CALL stckERR					;Chama a Rotina de stock de erro caso nao tenha stock
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
@@ -417,13 +419,11 @@ CompraSnackUm:
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
 	JMP cil							;Fica em loop ate continuar para o menu inicial
-CompraSnackDois:
+EstacaoCompaPorto2:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 82H						;Move para R0 a posição do PER_EN 2 ou 5
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
-	CALL TiraStockSnack				;Chama a Rotina para tirar 1 de stock das snacks
-	CALL stckERR					;Chama a Rotina de stock de erro caso nao tenha stock
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
@@ -432,13 +432,11 @@ CompraSnackDois:
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
 	JMP cil							;Fica em loop ate continuar para o menu inicial
-CompraSnackTres:
+EstacaoCompaPorto3:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 92H						;Move para R0 a posição do PER_EN 3 ou 6
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
-	CALL TiraStockSnack				;Chama a Rotina para tirar 1 de stock das snacks
-	CALL stckERR					;Chama a Rotina de stock de erro caso nao tenha stock
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
@@ -454,7 +452,8 @@ cil:
 	CMP R1, 1						;Compara R1 com o valor
 	JEQ	aux							;Se igual volta para o menu incial
 	JMP cil							;Se não fica em loop
-
+aux:
+JMP ligado
 Paga:
 	PUSH R0							;Guarda o valor R0
 	PUSH R1							;Guarda o valor R1
@@ -749,152 +748,31 @@ acabar:
 	RET								;Volta para o endereço de memoria guardado pela Sp
 	
 Stocks:
-	MOV R2, Stock1					;Move para R2 o valor do endereço de memoria do Stock1
+	MOV R2, Stock4					;Move para R2 o valor do endereço de memoria do Stock1
 	CALL MostrarDisplay				;Chama a Rotina para Mostrar o display
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
 StocksCil:
 	MOV R0, PER_EN					;Move para R0 o endereço do PER_EN
 	MOVB R1, [R0]					;Move para R1 o valor da memoria do PER_EN
 	CMP R1, 1						;Compara o valor do PER_EN com 1
-	JEQ	Stockss2					;Se for igual salta para Stockss2
+	JEQ	Stockss5					;Se for igual salta para Stockss2
 	CMP R1, 2						;Compara o valor do PER_EN com 2
 	JEQ acabar						;Se for igual salta para acabar
 	JMP StocksCil					;Fica em cilco ate conseguir ter um PER_EN valido
-Stockss2:
-	MOV R2, Stock2					;Move para R2 o valor do endereço de memoria do Stock2
-	CALL MostrarDisplay				;Chama a Rotina para Mostrar o display
-	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-Stocks2Cil:
-	MOV R0, PER_EN					;Move para R0 o endereço do PER_EN
-	MOVB R1, [R0]					;Move para R1 o valor da memoria do PER_EN
-	CMP R1, 1						;Compara o valor do PER_EN com 1
-	JEQ	Stockss3					;Se for igual salta para Stockss3
-	CMP R1, 2						;Compara o valor do PER_EN com 2
-	JEQ Stocks						;Se for igual salta para Stocks
-	JMP Stocks2Cil					;Fica em cilco ate conseguir ter um PER_EN valido
-Stockss3:
-	MOV R2, Stock3					;Move para R2 o valor do endereço de memoria do Stock3
-	CALL MostrarDisplay				;Chama a Rotina para Mostrar o display
-	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-Stocks3Cil:
-	MOV R0, PER_EN					;Move para R0 o endereço do PER_EN
-	MOVB R1, [R0]					;Move para R1 o valor da memoria do PER_EN
-	CMP R1, 1						;Compara o valor do PER_EN com 1
-	JEQ	Stockss4					;Se for igual salta para Stockss4
-	CMP R1, 2						;Compara o valor do PER_EN com 2
-	JEQ Stockss2					;Se for igual salta para Stockss3
-	JMP Stocks3Cil					;Fica em cilco ate conseguir ter um PER_EN valido
-Stockss4:
-	MOV R2, Stock4					;Move para R2 o valor do endereço de memoria do Stock4
+					
+Stockss5:
+	MOV R2, Stock5					;Move para R2 o valor do endereço de memoria do Stock4
 	CALL MostrarDisplay				;Chama a Rotina para Mostrar o display
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
 Stocks4Cil:
 	MOV R0, PER_EN					;Move para R0 o endereço do PER_EN
 	MOVB R1, [R0]					;Move para R1 o valor da memoria do PER_EN
 	CMP R1, 1						;Compara o valor do PER_EN com 1
-	JEQ	Stockss5					;Se for igual salta para Stockss5
+	JEQ	Stocks					;Se for igual salta para Stockss5
 	CMP R1, 2						;Compara o valor do PER_EN com 2
-	JEQ Stockss3					;Se for igual salta para Stockss3
+	JEQ acabar					;Se for igual salta para Stockss3
 	JMP Stocks4Cil					;Fica em cilco ate conseguir ter um PER_EN valido
-Stockss5:
-	MOV R2, Stock5					;Move para R2 o valor do endereço de memoria do Stock5
-	CALL MostrarDisplay				;Chama a Rotina para Mostrar o display
-	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-Stocks5Cil:
-	MOV R0, PER_EN					;Move para R0 o endereço do PER_EN
-	MOVB R1, [R0]					;Move para R1 o valor da memoria do PER_EN
-	CMP R1, 1						;Compara o valor do PER_EN com 1
-	JEQ	Stockss4					;Se for igual salta para Stockss4
-	CMP R1, 2						;Compara o valor do PER_EN com 2
-	JEQ acabar						;Se for igual salta para acabar
-	JMP Stocks5Cil					;Fica em cilco ate conseguir ter um PER_EN valido
 
-TiraStockBeb:
-	CMP R1, 1						;Compara R1 com o valor 1
-	MOV R0, 71FH					;Move para R0 o endereço de memoria onde fica o stock da bebida 1
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 4						;Compara R1 com o valor 4
-	MOV R0, 72FH					;Move para R0 o endereço de memoria onde fica o stock da bebida 4
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 2						;Compara R1 com o valor 2
-	MOV R0, 73FH					;Move para R0 o endereço de memoria onde fica o stock da bebida 2
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 5						;Compara R1 com o valor 5
-	MOV R0, 74FH					;Move para R0 o endereço de memoria onde fica o stock da bebida 5
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 3						;Compara R1 com o valor 3
-	MOV R0, 79FH					;Move para R0 o endereço de memoria onde fica o stock da bebida 3
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 6						;Compara R1 com o valor 6
-	MOV R0, 7AFH					;Move para R0 o endereço de memoria onde fica o stock da bebida 6
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-
-TiraStockSnack:
-	CMP R1, 1						;Compara R1 com o valor 1
-	MOV R0, 7BFH					;Move para R0 o endereço de memoria onde fica o stock do snack 1
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 4						;Compara R1 com o valor 4
-	MOV R0, 7CFH					;Move para R0 o endereço de memoria onde fica o stock do snack 4
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 2						;Compara R1 com o valor 2
-	MOV R0, 81FH					;Move para R0 o endereço de memoria onde fica o stock do snack 2
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 5						;Compara R1 com o valor 5
-	MOV R0, 82FH					;Move para R0 o endereço de memoria onde fica o stock do snack 5
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 3						;Compara R1 com o valor 3
-	MOV R0, 83FH					;Move para R0 o endereço de memoria onde fica o stock do snack 3
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	CMP R1, 6						;Compara R1 com o valor 6
-	MOV R0, 84FH					;Move para R0 o endereço de memoria onde fica o stock do snack 6
-	JEQ TiraStockUm					;Se for igual satla para o TiraStockUm
-	
-TiraStockUm:
-	MOV R2, 30H						;Move para R2 o valor 30H, 0 em String
-	MOV R3, 1						;Move para R3 o valor 1, variavel de controlo
-	MOV R5, R0						;Move para R5 uma copia do R0
-TiraStockUmCil:
-	MOVB R1, [R0]					;Move para R1 o valor da memoria de R0
-	CMP R1, R2						;Compara R1 com R2, ve se tem o valor 0
-	JGT	Tira						;Caso R1 seja maior que R2 é feito um salto para Tira
-	ADD R0, -1						;Adiciona -1 ao R0
-	ADD R3, 1						;Adiciona 1 a R3, variavel de controlo
-	CMP R3, 4						;Compara a variavel de controlo com o valor 4
-	JLE TiraStockUmCil				;Caso seja menor ou igual a 4 ele pula para TiraStockUmCil
-	MOV R8, 1						;Move para R8 o valor 1, caso nao seja possivel retirar 1 do stock
-	RET								;Volta para o endereço de memoria guardado pela Sp
-Tira:
-	CMP R0, R5						;Compara R0, com R5, para ver se R0 se encontra na primeira posição do Stock
-	JEQ SEGG						;Caso sejam iguais, ele pula para SEGG
-	MOVB R6, [R5]					;Caso nao sejam iguais, passa o valor de guardado na memoria de R5 para R6
-	MOV R7, 9						;Move para o R7 o valor 9
-	ADD R6,R7						;Soma a R6 o valor 9 por causa de 10-1 = 09
-	MOVB [R5], R6					;Move para a memoria de R5 o valor de R6
-	ADD R5, -1						;Adiciona -1 a R5, para passar para o proximo endereço da memoria
-	JMP Tira						;Salta para o Tira
-SEGG:
-	MOV R8, 0						;Move para R8 o valor 0 para dizer que existe stock do produto
-	SUB R1, 1						;Retira 1 unidade a R1(Retira do Stock)
-	MOVB [R0], R1					;Move para a memoria de R0 o valor de R1
-	RET								;Volta para o endereço de memoria guardado pela Sp
-	
-stckERR:							;(Para mostrar o erro caso nao haja stock do produto)
-	CMP R8, 1						;Compara o valor de R8 com 1
-	JEQ solveERR					;Caso seja igual a 1 pula para mostrar o erro que nao existe stock do produto
-	RET								;Volta para o endereço de memoria guardado pela Sp
-solveERR:
-	MOV R2, StockErr1				;Move para R2 o endereço do display de StockErr1
-	CALL MostrarDisplay				;Chama a Rotina mostrar display
-	CALL LimpaPerifericos			;Chama a Rotina limpaPerifericos
-	MOV R0, PER_EN					;Move para R0 o endereço do PER_EN
-solveERRCil:
-	MOVB R1, [R0]					;Move para R1 o valor da memoria do PER_EN
-	CMP R1, 1						;Compara o valor do PER_EN com 1
-	JEQ sair						;Caso seja igual ele sai
-	JMP solveERRCil					;Caso nao haja um PER_EN valido, fica em loop
-sair:
-	RET								;Volta para o endereço de memoria guardado pela Sp
-	
 insereMoeda:
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -1138,12 +1016,38 @@ CicloDisplay:
 	POP R0							;Restaura o valor de R0
 	RET								;Volta para o endereço de memoria guardado pela Sp
 	
-LimpaPerifericos:
-	PUSH R0							;Guarda o valor de R0 na Sp
-	PUSH R3							;Guarda o valor de R3 na Sp
-	MOV R0, PER_EN					;Le o endereço onde esta o PER_EN
-	MOV R3, 20H						;Move para R3 o valor 20h(espaço)
-	MOVB [R0], R3					;Move para a memoria de R0 o valor de R3
-	POP R3							;Restaura o valor de R3
-	POP R0							;Restaura o valor de R0
-	RET								;Volta para o endereço de memoria guardado pela Sp
+
+	;Limpa Perifericos
+	;--------------------
+	LimpaPerifericos:
+		PUSH R0
+		PUSH R1
+		PUSH R3
+		MOV R0,ON_OFF      ; guarda em R0 o valor do endereco de ON_OFF
+		MOV R1,PER_EN     ; guarda em R1 o valor do endereco de PER_EN
+		MOV R3,20H	           ; guarda em R3 o valor 0
+		MOVB [R0],R3       ; passa a 0 o que esta em R0 
+		MOVB [R1],R3       ; passa a 0 o que esta em R1
+		POP R3
+		POP R1
+		POP R0
+		RET
+		;--------------------
+	;LIMPA DISPLAY
+	;--------------------
+	LimpaDisplay:        ;Faz a Limpeza do diplay
+		PUSH R0
+		PUSH R1
+		PUSH R3
+		MOV R0,Display      ; move para R0 o endereco de Diplay
+		MOV R1,Display_end  ; move para R1 o endereco de Display_end
+	CicloLimpar:         ; Ciclo para a limpeza caracter a caracter  
+		MOV R2,CaracterVazio    ; coloca em R2 o valor guardado em CaracterVazio
+		MOVB [R0],R2     ; Move para R2 o byte de R0 
+		ADD R0,1         ; adiciona a R0, 1
+		CMP R0,R1        ; compara r0 com r1 
+		JLE CicloLimpar  ; salta em caso de ser menor ou igual 
+		POP R3
+		POP R1
+		POP R0
+		RET
