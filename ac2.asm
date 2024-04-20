@@ -2,6 +2,7 @@
 PER_EN 					EQU 30H		;Endereço do PER_EN
 ON_OFF  				EQU 1A0H    ;BOTAO ON/OFF
 EntradaCodigoCartao		EQU 20H	;Endereço do periferico para submeter o código do Cartão PEPE
+EntradaColocardinheiroCartao		EQU 10H	;Endereço do periferico para submeter o código do Cartão PEPE
 
 ; Periferico de Saida
 Display 	EQU 40H  ;Endereço onde começa o display
@@ -227,7 +228,7 @@ MenuCodigoPepe:
 Place 0B80H 
 MenuSaldoPepe:
 	String "|---Saldo PEPE-|"
-	String "|------01.50---|"
+	String "|------00.00---|"
 	String "|1- Comprar    |"
 	String "|2- Recarregar |"
 	String "|3-Bilhtes Disp|"
@@ -242,6 +243,27 @@ Menu_Erro_Pepe:
 	String "      te        "
 	String "       !        "
 	String "1) Continuar    "
+Place 0D90H
+InserirValor:
+	String "----------------"
+	String "----Pagamento---"
+	String "Inserir:   XX,XX"
+	String "                "
+	String "                "
+	String "----------------"
+	String "1) Continuar    "	
+Place 0D10H
+TalaoPepe:
+	String "----------------"
+	String "      Talao     "
+	String "Inserido:   0,00"
+	String "Saldo Atual:    "
+	String " 00,00          "
+	String "----------------"
+	String "1) Continuar    "
+Place 0140H
+Carregasaldo:
+	String "0,00            "
 Place 0000H
 Inicio:
 	MOV R0, Principio
@@ -266,13 +288,17 @@ Principio:
 		MOV R0, PER_EN					;Le o endereço onde esta o PER_EN
 		MOVB R1, [R0]					;Le o PER_EN da memoria
 		CMP R1, 1						;Compara o PER_EN com o valor 1
-		JEQ	MComparBilhete 					;Opção Comaprar	
+		JEQ	salt 					;Opção Comaprar	
 		CMP R1, 2						;Compara o PER_EN com o valor 2
 		JEQ MCartao						;Opcão Usar Cartao
 		CMP R1, 3						;Compara o PER_EN com o valor 3
-		JEQ Stock						;Opcão Stock
+		JEQ s						;Opcão Stock
 	JMP Le_PER_EN					;Caso nao tenha sido introduzido nenhum valor de PER_EN valido, o mesmo fica num ciclo
 	;----------------------------------------
+	s:
+	JMP Stock
+	salt:
+	JMP MComparBilhete
 	MCartao:
 		MOV R2, MenuCodigoPepe			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
@@ -343,9 +369,10 @@ Le_Cart2:
 	CMP R1, 3
 	JEQ MBilhete
 	CMP R1, 7
-	JEQ aux100
+	JEQ aux99
 	JMP Le_Cart2			
-	
+	aux99:
+	JMP ligado
 MBilhete:
 	MOV R2, Bilhtete1			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
@@ -382,7 +409,31 @@ MBilhete3:
 	JMP CiloBilhete3					
 	
 MRecarregar:
-JMP ligado
+	MOV R2, InserirValor			;Carrega o endereço do menu de produtos
+		CALL MostrarDisplay				;Mostra o menu de produtos
+		CALL LimpaPerifericos			;Limpa os perifericos de entrada
+	MRecarregar2:
+	MOV R0, PER_EN					;Le o endereço de PER_EN
+	MOVB R1, [R0]					;Le o PER_EN da memoria
+	CMP R1, 1						;Compara o PER_EN com o valor 1
+	JEQ	ProssegueTalao 			;Opção Cartao para continuar	
+	JMP MRecarregar2
+	
+	
+ProssegueTalao:
+CALL updateSaldo
+MOV R2, TalaoPepe			;Carrega o endereço do menu de produtos
+		CALL MostrarDisplay				;Mostra o menu de produtos
+		CALL LimpaPerifericos			;Limpa os perifericos de entrada
+	MRecarregare3:
+	MOV R0, PER_EN					;Le o endereço de PER_EN
+	MOVB R1, [R0]					;Le o PER_EN da memoria
+	CMP R1, 1						;Compara o PER_EN com o valor 1
+	JEQ	ligado 			;Opção Cartao para continuar	
+	JMP MRecarregare3
+
+updateSaldo:
+  JMP ligado
 
 ;-----------------------------------------------
 Stock:
@@ -390,7 +441,7 @@ Stock:
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Move para R1 o valor de PER_EN
 	CMP R1, 2						;Compara o valor com 2
-	JEQ ligado					;Caso seja igual é feito um salto para o ligado do programa
+	JEQ aux99					;Caso seja igual é feito um salto para o ligado do programa
 	CALL Stocks						;Chama a Rotina Stocks(Que mostra a lista do Stock de troco)
 	JMP ligado					;Salta para o ligado
 
@@ -400,7 +451,7 @@ MComparBilhete:
 	MOV R2, Menu_Estacoes			;Carrega o endereço do menu de estaçoes
 	CALL MostrarDisplay				;Mostra o menu de estaçoes
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-Le_Prod:
+Le_Bilhetee:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
@@ -408,8 +459,8 @@ Le_Prod:
 	CMP R1, 2						;Compara a PER_EN com o valor 2
 	JEQ MPorto 					;Opção Porto
 	CMP R1, 7						;Compara com o valor de saida 7
-	JEQ ligado					;Caso seja igual volta para o inicio
-	JMP Le_Prod						;Caso nao seja selecionado nenhum valor de PER_EN valido, o mesmo fica num ciclo
+	JEQ aux100					;Caso seja igual volta para o inicio
+	JMP Le_Bilhetee						;Caso nao seja selecionado nenhum valor de PER_EN valido, o mesmo fica num ciclo
 
 MPorto:
 	MOV R2, Menu_Porto				;Move para R2 a posição do display do menu de Porto
@@ -771,6 +822,34 @@ proint:
 	POP R0							;Restaura o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
 	
+	
+	
+ApagaIntTalao:
+	PUSH R0							;Guarda o valor de R0 na Sp
+	PUSH R1							;Guarda o valor de R1 na Sp
+	PUSH R2							;Guarda o valor de R2 na Sp
+	PUSH R3							;Guarda o valor de R3 na Sp
+	MOV R0, 5ACH					;Move para R0 o valor do endereço de memoria do valor introduzido do talao intermedio 
+	MOV R2, 2CH						;Move para R2 o valor da virgula
+	MOV R3, 1						;Move 1 para R3 para ser a variavel de controlo
+Compereint2:
+	MOVB R1, [R0]					;Move para R1 o valor apontado por R0 do valor introduzido
+	CMP R1, R2						;Verifica se é uma virgula 
+	JEQ proint2						;Se for a virgula pula para o proximo endereço
+	MOV R1, 30H						;Caso nao seja a virgula mete a 0
+	MOVB [R0], R1					;Move R1 para a memoria de R0
+proint2:
+	ADD R0, 1						;Adiciona 1 a R0 para passar para o proximo endereço
+	ADD R3, 1						;Adiciona 1 a variavel de controlo
+	CMP R3, 4						;Compara a variavel de controlo com o valor 4
+	JLE Compereint2					;Caso nao seja 5 ele faz para os restantes digitos
+	POP R3							;Restaura o valor de R3
+	POP R2							;Restaura o valor de R2
+	POP R1							;Restaura o valor de R1
+	POP R0							;Restaura o valor de R0
+	RET								;Vai para o endereço de memoria guardado pela Sp
+	
+;------------------------------------	
 ModificaPag:						;(Modifica o preço no talao intermedio)
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -1151,21 +1230,30 @@ CicloDisplay:
 		PUSH R2
 		PUSH R3
 		PUSH R4
+		PUSH R5
+		PUSH R6
 		MOV R0,ON_OFF      ; guarda em R0 o valor do endereco de ON_OFF
 		MOV R1,PER_EN     ; guarda em R1 o valor do endereco de PER_EN
 		MOV R2,EntradaCodigoCartao ; guarda em R2 o endereço do periferico onde é introduzido o código pepe
+		MOV R5, EntradaColocardinheiroCartao
 		MOV R3,20H	           ; guarda em R3 o valor 20h
 		MOVB [R0],R3       ; passa a 0 o que esta em R0 
 		MOVB [R1],R3       ; passa a 0 o que esta em R1
 
 		MOV R4, 24H		; é atrubuido a R4 o valor 24H que será utilizado para limpar as entradas do codigo PEPE
+		MOV R6, 14H
 	cicloLimpaCodigo:
 		MOVB [R2],R3		; limpa a entrada do periferico 	
 		ADD R2,1			; É somado 1 ao R2 para este apontar ao próximo per_Entrada do código  
+		ADD R5,1
+		CMP R5,R6
+		JGT FimLimpaPerifericos ; se R2 for maior que 24H, significa que limpu todos os per_entrada e acaba a rutina
 		CMP R2, R4		; é comparado com 24H para saber se já limpou todas as entradas do código do PEPE
 		JGT FimLimpaPerifericos ; se R2 for maior que 24H, significa que limpu todos os per_entrada e acaba a rutina
 		JMP cicloLimpaCodigo	;Caso contrário repete o ciclo
 	FimLimpaPerifericos:	
+		POP R6
+	    POP R5
 		POP R4	
 		POP R3
 		POP R2
