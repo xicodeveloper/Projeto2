@@ -1,6 +1,7 @@
 ; Perifericos de Entrada
-PER_EN EQU 30H		;Endereço do PER_EN
-ON_OFF  				EQU 1A0H        	;BOTAO ON/OFF
+PER_EN 					EQU 30H		;Endereço do PER_EN
+ON_OFF  				EQU 1A0H    ;BOTAO ON/OFF
+EntradaCodigoCartao		EQU 20H	;Endereço do periferico para submeter o código do Cartão PEPE
 
 ; Periferico de Saida
 Display 	EQU 40H  ;Endereço onde começa o display
@@ -15,23 +16,29 @@ CartaoEndreco EQU 0230H
 TabelaCartoesInicio 	EQU	4000H
 ;código único de  5 caracteres  - 5 bytes (Ex: XXXXX)
 ; saldo disponivel				- 5 bytes (Ex: 1 5 , 0 0)
-TabelaCartoesFim 		EQU	4000H; Guarda 5 cartões de 
+
+CartaoSubmetido 		EQU 3FE0H
+
 ;SP
 StackPointer 	EQU 6000H ;Endereço onde começa a Stack Pointer
 
-Place TabelaCartoesInicio
+Place 4000H
 String "XXXXX"
 String "00,00"
 
+Place 4010H
 String "XXXXX"
 String "00,00"
 
+Place 4020H
 String "XXXXX"
 String "00,00"
 
+Place 4030H
 String "XXXXX"
 String "00,00"
 
+Place 4040H
 String "XXXXX"
 String "00,00"
 
@@ -213,7 +220,7 @@ StockErr1:
 Place 0B00H 
 MenuCodigoPepe:
 	String "Introduza n.Pepe"
-	String "   XXXXXXX      "
+	String "    XXXXX       "
 	String "                "
 	String "1- Continuar    "
 	String "5- Cancelar     "
@@ -272,7 +279,38 @@ Principio:
 	JEQ ligado					;Caso seja igual volta para o inicio
 	JMP Le_Cart						;Caso nao seja selecionado nenhum valor de PER_EN valido, o mesmo fica num ciclo
 	
+verificaCodigoPepe:
+	MOV R1, 24H					; guarda no R1 o endereço do ultimo periferico que lê o cartão PEPE
+	MOV R2, TabelaCartoesInicio ; guarda no R2 o endereço do inicio da tabela onde são armazenadas os cartoes pepe
+	MOV R3, 4040H				; endereço do ultimo cartao pepe
+cicloVerificaCodigoPepe:
+	MOV R0, EntradaCodigoCartao ; guarda no R0 o endereço onde começa o periferico que lê o cartão PEPE					
+	MOV R6, R2					; o R6 será usado para selecionar os digitos de cada codigo, neste momento é atribuido ao R6 o endereço do primeiro digito do codigo
+	MOVB R4, [R0]				; lê 
+	MOVB R5, [R6]
+	
+cicloAuxVerificaCodigoPepe:
+	CMP R4,R5
+	JNE FimCicloAux
+	ADD R0,1
+	ADD R6,1
+	CMP R0,R1
+	JGT FimVerificaCodigoPepe
+	JMP cicloAuxVerificaCodigoPepe
+
+FimCicloAux:
+	ADD R2, 5
+	ADD R2, 5
+	CMP R2, R3
+	JLE cicloVerificaCodigoPepe
+	JMP ligado
+
+
+FimVerificaCodigoPepe:
+	RET
+
 MPepeContinuar:
+	CALL verificaCodigoPepe
 	MOV R2, MenuSaldoPepe			;Carrega o endereço do menu de produtos
 	CALL MostrarDisplay				;Mostra o menu de produtos
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
@@ -1054,13 +1092,27 @@ CicloDisplay:
 	LimpaPerifericos:
 		PUSH R0
 		PUSH R1
+		PUSH R2
 		PUSH R3
+		PUSH R4
 		MOV R0,ON_OFF      ; guarda em R0 o valor do endereco de ON_OFF
 		MOV R1,PER_EN     ; guarda em R1 o valor do endereco de PER_EN
-		MOV R3,20H	           ; guarda em R3 o valor 0
+		MOV R2,EntradaCodigoCartao ; guarda em R2 o endereço do periferico onde é introduzido o código pepe
+		MOV R3,20H	           ; guarda em R3 o valor 20h
 		MOVB [R0],R3       ; passa a 0 o que esta em R0 
 		MOVB [R1],R3       ; passa a 0 o que esta em R1
+
+		MOV R4, 24H		; é atrubuido a R4 o valor 24H que será utilizado para limpar as entradas do codigo PEPE
+	cicloLimpaCodigo:
+		MOVB [R2],R3		; limpa a entrada do periferico 	
+		ADD R2,1			; É somado 1 ao R2 para este apontar ao próximo per_Entrada do código  
+		CMP R2, R4		; é comparado com 24H para saber se já limpou todas as entradas do código do PEPE
+		JGT FimLimpaPerifericos ; se R2 for maior que 24H, significa que limpu todos os per_entrada e acaba a rutina
+		JMP cicloLimpaCodigo	;Caso contrário repete o ciclo
+	FimLimpaPerifericos:	
+		POP R4	
 		POP R3
+		POP R2
 		POP R1
 		POP R0
 		RET
