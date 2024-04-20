@@ -366,9 +366,9 @@ MBilhete2:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	MBilhete3 					 ;Opção Cartao para continuar	
+	JEQ	MBilhete 					 ;Opção Cartao para continuar	
 	CMP R1, 2						;Compara o PER_EN com o valor 1
-	JEQ	MBilhete 					 ;Opção Cartao para anterior
+	JEQ	MBilhete3 					 ;Opção Cartao para anterior
 	JMP CiloBilhete2	
 MBilhete3:
 	MOV R2, Bilhtete2			;Carrega o endereço do menu de produtos
