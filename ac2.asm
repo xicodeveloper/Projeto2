@@ -575,7 +575,7 @@ EstacaoCompaLisboa2:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	;CALL IncrementaNPepe
+	CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -589,7 +589,7 @@ EstacaoCompaLisboa3:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	;CALL IncrementaNPepe
+	CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -604,7 +604,7 @@ EstacaoCompaPorto1:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	;CALL IncrementaNPepe
+	CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -632,7 +632,7 @@ EstacaoCompaPorto3:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	;CALL IncrementaNPepe
+	CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
