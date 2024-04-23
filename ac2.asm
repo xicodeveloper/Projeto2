@@ -15,8 +15,9 @@ TabelaCartoesInicio 	EQU	4000H
 ;código único de  5 caracteres  - 5 bytes (Ex: XXXXX)
 ; saldo disponivel				- 5 bytes (Ex: 1 5 , 0 0)
 
-CartaoSubmetido 		EQU 3FE0H
 
+PasswordLugar			EQU 0980H
+CartaoSubmetido 		EQU 3FE0H
 novoCodigoPepe          EQU 3FC0H; endereço de memoria do numero do pepe que foi gerado
 
 ;SP
@@ -198,7 +199,7 @@ Stock2:
 
 Place 980H
 Password:
-	String "1aM!            "
+	String "02024"
 	
 Place 0A00H
 StockErr:
@@ -945,49 +946,37 @@ InicStock:
 	MOV R2, StockIni				;Carrega o endereço do menu de Stock
 	CALL MostrarDisplay				;Mostra o menu de produtos
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-PASSS:
-	CALL IntroduzPass				;Chama a Rotina para introduzir a password
+
 Pass_OP:							;(NOTA: Só é possivel prosseguir/voltar atraz depois de introduzir a password)
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Move para R1 o valor do PER_EN
 	CMP R1, 1						;Caso esta seja 1 verifica a password
-	JEQ VerificaPass				;Salta para verifica a password
+	JEQ verificaPassword				;Salta para verifica a password
 	CMP R1, 2						;Caso seja dois voltra ao menu inicial
 	JEQ acabar						;Salta para acabar
 	JMP Pass_OP						;Caso contrario fica em loop ate conseguir ter um PER_EN valido
 
-IntroduzPass:						
-	MOV R5, 1						;Move 1 para R5, a variavel de controlo
-	MOV R4, 85H						;Move para R4 o endereço de memoria onde esta a password
-	MOV R6, 20H						;Move para R6 o valor 20H, o espaço em branco
-IntroduzPasss:
-	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
-	MOVB R1, [R0]					;Move para R1 o valor do PER_EN
-	CMP R1, R6						;Compara R1 com R6
-	JEQ IntroduzPasss				;Caso sejam iguais, ele tem de introduzir um caracter da password(ficando em loop ate ser inserido um caracter valido) (NOTA: A PASSWORD NAO PODE CONTER UM ESPAÇO)
-	MOVB [R4], R1					;Move para a memoria o valor de R1
-	ADD R4, 1						;Adiciona 1 unidade a R4
-	ADD R5, 1						;Adiciona 1 unidade a R5
-	CMP R5, 4						;Compara R5 com o valor 4
-	CALL LimpaPerifericos			;Limpa o periferico de entrada
-	JLE	IntroduzPasss				;Caso o valor seja menor ou igual a 4 este volta para introduzpass
-	RET								;Volta para o endereço de memoria guardado pela Sp
+verificaPassword:
+	MOV R0, EntradaCodigoCartao ; guarda no R0 o endereço onde começa o periferico que lê o cartão PEPE
+	MOV R1, 24H					; guarda no R1 o endereço do ultimo periferico que lê o codigo introduzido
+	MOV R2, PasswordLugar ; guarda no R2 o endereço onde está armazenado a palavra-passe
+	MOV R3, 4040H				; endereço do ultimo cartao pepe
+	MOV R6, 30H					; guarda no registo R6 o valor 30 em hexadecimal para depois ser adicionado ao digito introduzido
+cicloVerificaPassword:
+	MOVB R4, [R0]				; guarda no R4 o valor do digito a ser avaliado que se encontra no endereço guardado 
+	ADD R4, R6					; adiciona o valor 30H porque assim poderá coincidir com o valor guardado na password
+	MOVB R5, [R2]				; guarda no R5 o digito da password que será avaliado
+	CMP R4,R5					
+	JNE Erro					;se o digito introduzido for diferente ao digito avaliado significa que não coincidem, saltando para o erro
+	ADD R0,1					; caso contrario é adicionado 1 valor aos endereços dos digitos para avaliar os seguintes digitos
+	ADD R2,1
+	CMP R0,R1					; compara o endereço do seguinte digito introduzido com o ultimo endereço do periferico de entrada
+	JGT FimVerificaPassword		; se o endereço for maior do que o ultimo endereço do periferico de entrada, significa que todos os digitos coincidiram, logo a palavra- passe coincide
+	JMP cicloVerificaPassword	; caso contrario, volta ao inicio do ciclo
+
+FimVerificaPassword:
+	RET
 	
-VerificaPass:						;(Verifica se a password esta correta)
-	MOV R0, 85H						;Move para R0 o endereço de memoria onde esta a password inserida
-	MOV R4, 1						;Move 1 unidade para R4, variavel de controlo
-	MOV R2, Password				;Move para R2 o endereço de memoria para onde esta guardado a password
-VerificaPasss:
-	MOVB R1, [R0]					;Move para R1 o caracter da password inserida
-	MOVB R3, [R2]					;Move para R3 o caracter da password real
-	CMP R1, R3						;Compara os dois
-	JNE Erro						;Caso nao sejam iguais ele pula para o ERRO
-	ADD R0, 1						;Caso sejam iguais ele adiciona 1 a R0
-	ADD R2, 1						;Adiciona 1 a R2
-	ADD R4, 1						;Adiciona 1 a R4, variavel de controlo
-	CMP R4, 4						;Compara R4 com o valor 4
-	JLE VerificaPasss				;Caso o valor seja menor ou igual a 4 ele pula para verificapass para verificar os caracteres restantes da password
-	RET								;Volta para o endereço de memoria guardado pela Sp
 Erro:
 	MOV R2, StockErr				;Move para R2 o endereço do display do StockErr
 	CALL MostrarDisplay				;Chama a Rotina para Mostrar o display
