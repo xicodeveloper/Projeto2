@@ -43,7 +43,7 @@ String "XXXXX"
 String "00,00"
 
 Place 3FC0H
-String "099"
+String "000"
 
 
 Place 200H
@@ -675,13 +675,13 @@ IncrementaNPepe:
 	MOVB [R4], R7
 	MOVB R1, [R3]
 	ADD R1,1
+	MOVB [R3], R1
 	CMP R1,R2
 	JLT FimIncrementaNPepe
 	MOVB [R3], R7
 	MOVB [R4], R7
 	MOVB [R5], R7
 FimIncrementaNPepe:
-	MOVB [R3], R1
 	MOV R6, 051DH
 	MOVB R1, [R3]
 	MOVB [R6], R1 
