@@ -868,6 +868,10 @@ protrc:								;(Proximo Troco)
 	POP R0							;Restaura o valor de R0
 	RET								;Vai para o endereço guardado na SP
 	
+;---------------------------------------------------Taloes e Modificaçoes associadas----------------------------------------------------------------
+
+	
+;--------------------Faz uma limpeza nas moedas Inseridas no talao intermediario-------------------------------
 ApagaInt:
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -893,34 +897,8 @@ proint:
 	POP R0							;Restaura o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
 	
-	
-	
-ApagaIntTalao:
-	PUSH R0							;Guarda o valor de R0 na Sp
-	PUSH R1							;Guarda o valor de R1 na Sp
-	PUSH R2							;Guarda o valor de R2 na Sp
-	PUSH R3							;Guarda o valor de R3 na Sp
-	MOV R0, 5ACH					;Move para R0 o valor do endereço de memoria do valor introduzido do talao intermedio 
-	MOV R2, 2CH						;Move para R2 o valor da virgula
-	MOV R3, 1						;Move 1 para R3 para ser a variavel de controlo
-Compereint2:
-	MOVB R1, [R0]					;Move para R1 o valor apontado por R0 do valor introduzido
-	CMP R1, R2						;Verifica se é uma virgula 
-	JEQ proint2						;Se for a virgula pula para o proximo endereço
-	MOV R1, 30H						;Caso nao seja a virgula mete a 0
-	MOVB [R0], R1					;Move R1 para a memoria de R0
-proint2:
-	ADD R0, 1						;Adiciona 1 a R0 para passar para o proximo endereço
-	ADD R3, 1						;Adiciona 1 a variavel de controlo
-	CMP R3, 4						;Compara a variavel de controlo com o valor 4
-	JLE Compereint2					;Caso nao seja 5 ele faz para os restantes digitos
-	POP R3							;Restaura o valor de R3
-	POP R2							;Restaura o valor de R2
-	POP R1							;Restaura o valor de R1
-	POP R0							;Restaura o valor de R0
-	RET								;Vai para o endereço de memoria guardado pela Sp
-	
-;------------------------------------	
+
+;------------------------Modifica Preço para colocar no Talão------------	
 ModificaPag:						;(Modifica o preço no talao intermedio)
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -941,7 +919,8 @@ ModPag:
 	POP R1							;Restaura o valor de R1
 	POP R0							;Restaura o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
-
+	
+;----------------------------COLOCA O NOME DO PRODUTO QUE O CLIENTE COMPROU----------------------------------------
 ModificaTalao:						;(Modifica o talao final de compra, coloca o nome do produto e o respetivo preço que quer comprar)
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -960,6 +939,7 @@ ModfTa:
 	POP R1							;Restaura o valor de R1
 	POP R0							;Restaira o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
+;---------------------------------------------------------------------------------------------------------------------
 
 InicStock:
 	MOV R2, StockIni				;Carrega o endereço do menu de Stock
