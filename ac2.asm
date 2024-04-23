@@ -9,7 +9,6 @@ Display 	EQU 40H  ;Endereço onde começa o display
 Display_end EQU 175  ;Endereço onde termina o display
 CaracterVazio 	 		EQU 20 			;limpa o ecra
 
-EntradaSaldoEndreco EQU 10H
 
 
 TabelaCartoesInicio 	EQU	4000H
@@ -363,7 +362,7 @@ Le_Cart2:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	 MComparBilhete					;Opção MComparBilhete	
+	JEQ	 MComparBilhetej					;Opção MComparBilhete	
 	CMP R1, 2						;Compara com o valor de saida 7
 	JEQ MRecarregar					;Caso seja igual volta para o inicio
 	CMP R1, 3
@@ -373,6 +372,8 @@ Le_Cart2:
 	JMP Le_Cart2			
 	aux99:
 	JMP ligado
+	MComparBilhetej:
+	JMP MComparBilhete
 MBilhete:
 	MOV R2, Bilhtete1			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
@@ -421,20 +422,7 @@ MRecarregar:
 	
 	
 ProssegueTalao:
-CALL updateSaldo
-MOV R2, TalaoPepe			;Carrega o endereço do menu de produtos
-		CALL MostrarDisplay				;Mostra o menu de produtos
-		CALL LimpaPerifericos			;Limpa os perifericos de entrada
-	MRecarregare3:
-	MOV R0, PER_EN					;Le o endereço de PER_EN
-	MOVB R1, [R0]					;Le o PER_EN da memoria
-	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	ligado 			;Opção Cartao para continuar	
-	JMP MRecarregare3
-
-updateSaldo:
-  JMP ligado
-
+JMP ligado
 ;-----------------------------------------------
 Stock:
 	CALL InicStock					;Chama a Rotina de Stock inicial(para por a palavra pass)
