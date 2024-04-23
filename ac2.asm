@@ -18,6 +18,8 @@ TabelaCartoesInicio 	EQU	4000H
 
 CartaoSubmetido 		EQU 3FE0H
 
+novoCodigoPepe          EQU 3FC0H; endereço de memoria do numero do pepe que foi gerado
+
 ;SP
 StackPointer 	EQU 6000H ;Endereço onde começa a Stack Pointer
 
@@ -41,6 +43,8 @@ Place 4040H
 String "XXXXX"
 String "00,00"
 
+Place 3FC0H
+String "099"
 
 
 Place 200H
@@ -106,7 +110,7 @@ Menu_Porto_2:
 Place 500H
 Talao:
 	String "----------------"
-	String " PEPE GERADO    "
+	String " PEPE GERADO:XXX"
 	String "->              "
 	String "-> Inserido 1,00"
 	String "-> Troco    1,00"
@@ -231,34 +235,34 @@ MenuSaldoPepe:
 	String "|------00.00---|"
 	String "|1- Comprar    |"
 	String "|2- Recarregar |"
-	String "|3-Bilhtes Disp|"
+	String "|              |"
 	String "|7- Sair       |"
 	String "|--------------|"
 Place 0C10H
 Menu_Erro_Pepe:
 	String "----- ERRO -----"
 	String "                "
+	String "      Cartao    "
+	String "  Inexistente!  "
 	String "                "
-	String "Cartao Inexisten"
-	String "      te        "
-	String "       !        "
-	String "1) Continuar    "
+	String " 1) Continuar   "
+	String "                "
 Place 0D90H
 InserirValor:
 	String "----------------"
-	String "----Pagamento---"
-	String "Inserir:   XX,XX"
-	String "                "
+	String "---Recarregar---"
+	String "Inserido:  XX,XX"
 	String "                "
 	String "----------------"
-	String "1) Continuar    "	
+	String "1) Inserir Moeda"
+	String "2) Continuar    "	
 Place 0D10H
 TalaoPepe:
 	String "----------------"
 	String "      Talao     "
-	String "Inserido:   0,00"
 	String "Saldo Atual:    "
 	String " 00,00          "
+	String "Inserido:   0,00"
 	String "----------------"
 	String "1) Continuar    "
 Place 0140H
@@ -319,10 +323,11 @@ verificaCodigoPepe:
 cicloVerificaCodigoPepe:
 	MOV R0, EntradaCodigoCartao ; guarda no R0 o endereço onde começa o periferico que lê o cartão PEPE					
 	MOV R6, R2					; o R6 será usado para selecionar os digitos de cada codigo, neste momento é atribuido ao R6 o endereço do primeiro digito do codigo
-	MOVB R4, [R0]				; lê 
-	MOVB R5, [R6]
+	
 	
 cicloAuxVerificaCodigoPepe:
+	MOVB R4, [R0]				
+	MOVB R5, [R6]
 	CMP R4,R5
 	JNE FimCicloAux
 	ADD R0,1
@@ -415,10 +420,14 @@ MRecarregar:
 	MRecarregar2:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
-	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	ProssegueTalao 			;Opção Cartao para continuar	
+	CMP R1, 1						;Compara o PER_EN com o valor 1 para selecionar a opção de inserir moedas
+	JEQ MandaPagar			;Opção Cartao para continuar	
+	CMP R1, 2						;Compara o PER_EN com o valor 2 para selecionar a opção de continuar
+	JEQ	ProssegueTalao 			;Opção Cartao para continuar
 	JMP MRecarregar2
-	
+
+MandaPagar:
+JMP Paga	
 	
 ProssegueTalao:
 CALL updateSaldo
@@ -552,6 +561,7 @@ EstacaoCompaLisboa1:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
+	CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -565,6 +575,7 @@ EstacaoCompaLisboa2:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
+	;CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -578,6 +589,7 @@ EstacaoCompaLisboa3:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
+	;CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -592,6 +604,7 @@ EstacaoCompaPorto1:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
+	;CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -605,6 +618,7 @@ EstacaoCompaPorto2:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
+	CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -618,6 +632,7 @@ EstacaoCompaPorto3:
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
 	CALL Paga						;Rotina para fazer o pagamento do produto
 	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
+	;CALL IncrementaNPepe
 	MOV R2, Talao					;Move para R2 o endereço do display do talao
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
@@ -631,6 +646,74 @@ cil:
 	JMP cil							;Se não fica em loop
 aux:
 JMP ligado
+
+IncrementaNPepe:
+	PUSH R0
+	PUSH R1
+	PUSH R2
+	PUSH R3
+	PUSH R4
+	PUSH R5
+	PUSH R6
+	PUSH R7
+
+	MOV R0, novoCodigoPepe; endereço de memoria do contador 
+	MOV R2, 3AH
+	MOV R3, R0
+	MOV R4,	R0
+	ADD R4,1
+	MOV R5,	R0
+	ADD R5,2
+	MOV R7, 30H
+	PrimeiroDigito:
+	MOVB R1, [R5]
+	ADD R1, 1
+	CMP R1,R2
+	JEQ SegundoDigito
+	MOVB [R5], R1
+	JMP FimIncrementaNPepe
+
+	SegundoDigito:
+	MOVB [R5], R7
+	MOVB R1, [R4]
+	ADD R1,1
+	CMP R1,R2
+	JEQ TerceiroDigito
+	MOVB [R4],R1
+	JMP FimIncrementaNPepe
+
+	TerceiroDigito:
+	MOVB [R5], R7
+	MOVB [R4], R7
+	MOVB R1, [R3]
+	ADD R1,1
+	CMP R1,R2
+	JLT FimIncrementaNPepe
+	MOVB [R3], R7
+	MOVB [R4], R7
+	MOVB [R5], R7
+FimIncrementaNPepe:
+	MOVB [R3], R1
+	MOV R6, 051DH
+	MOVB R1, [R3]
+	MOVB [R6], R1 
+	ADD R6,1
+	MOVB R1, [R4]
+	MOVB [R6], R1 
+	ADD R6,1
+	MOVB R1, [R5]
+	MOVB [R6], R1 
+
+	POP R7
+	POP R6
+	POP R5
+	POP R4
+	POP R3
+	POP R2
+	POP R1
+	POP R0
+	RET
+
 Paga:
 	PUSH R0							;Guarda o valor R0
 	PUSH R1							;Guarda o valor R1
