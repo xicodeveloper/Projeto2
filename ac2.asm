@@ -430,32 +430,32 @@ verificaCodigoPepe:
 	
 	MOV R1, 24H					; guarda no R1 o endereço do ultimo periferico que lê o cartão PEPE
 	MOV R2, TabelaCartoesInicio ; guarda no R2 o endereço do inicio da tabela onde são armazenadas os cartoes pepe
-	MOV R3, 4040H				; endereço do ultimo cartao pepe
+	MOV R3, 4040H				; endereço do ultimo cartao pepe fixo
 	MOV R11, UltimoEndrecoPEPE
 	MOV R10 ,[R11]
-	MOV R9, 10H
-	ADD R3, R10
+	MOV R9, 10H					; guarda em R9 o valor 10H
+	ADD R3, R10					; R3 guarda o endereço do ultimo cartão
 cicloVerificaCodigoPepe:
 	MOV R0, EntradaCodigoCartao ; guarda no R0 o endereço onde começa o periferico que lê o cartão PEPE					
 	MOV R6, R2					; o R6 será usado para selecionar os digitos de cada codigo, neste momento é atribuido ao R6 o endereço do primeiro digito do codigo
 	
 	
 cicloAuxVerificaCodigoPepe:
-	MOVB R4, [R0]				
-	MOVB R5, [R6]
+	MOVB R4, [R0]					; guarda em R4 o digito a ser avaliado do digito introduzido
+	MOVB R5, [R6]					; guarda em R5 o digito a ser avaliado do digito do cartão PEPE a ser avaliado
 	CMP R4,R5
 	JNE FimCicloAux
-	ADD R0,1
-	ADD R6,1
-	CMP R0,R1
-	JGT FimVerificaCodigoPepe
-	JMP cicloAuxVerificaCodigoPepe
+	ADD R0,1						; vai para o proximo digito do p_entrada do codigo
+	ADD R6,1						;vai para o proximo digito do codigo pepe do cartão pepe a ser avaliado
+	CMP R0,R1						; se ainda há digitos por avaliar
+	JGT FimVerificaCodigoPepe		;continua o ciclo
+	JMP cicloAuxVerificaCodigoPepe	;caso contrario será avaliado codigo do proximo cartão pepe
 
 FimCicloAux:
-	ADD R2, R9
-	CMP R2, R3
-	JLE cicloVerificaCodigoPepe
-	JMP Erro_Pepe
+	ADD R2, R9						; é adicionado 10H em R2 para selecionar o proximo cartão pepe para ser avaliado
+	CMP R2, R3						; se R2 selecionar um endereço menor do que o endereço do ultimo cartão pepe 
+	JLE cicloVerificaCodigoPepe		; continua o ciclo
+	JMP Erro_Pepe					; caso contrario, o codigo pepe introduzido não corresponde com nenhum cartão armazenado na tabela
 
 
 FimVerificaCodigoPepe:
