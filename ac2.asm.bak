@@ -2,25 +2,30 @@
 PER_EN 					EQU 30H		;Endereço do PER_EN
 ON_OFF  				EQU 1A0H    ;BOTAO ON/OFF
 EntradaCodigoCartao		EQU 20H	;Endereço do periferico para submeter o código do Cartão PEPE
-EntradaColocardinheiroCartao		EQU 10H	;Endereço do periferico para submeter o código do Cartão PEPE
 
 ; Periferico de Saida
 Display 	EQU 40H  ;Endereço onde começa o display
 Display_end EQU 175  ;Endereço onde termina o display
 CaracterVazio 	 		EQU 20 			;limpa o ecra
 
+Numero_Cartoes              EQU 35H        ;numero de cartoes na memoria(CORRESPONDE A 5 )
+EntradaColocardinheiroCartao		EQU 10H	      ;Endereço de numero_cartoes
 
 
 TabelaCartoesInicio 	EQU	4000H
 ;código único de  5 caracteres  - 5 bytes (Ex: XXXXX)
 ; saldo disponivel				- 5 bytes (Ex: 1 5 , 0 0)
 
-CartaoSubmetido 		EQU 3FE0H
 
+PasswordLugar			EQU 0980H
+CartaoSubmetido 		EQU 3FE0H
 novoCodigoPepe          EQU 3FC0H; endereço de memoria do numero do pepe que foi gerado
 
 ;SP
 StackPointer 	EQU 6000H ;Endereço onde começa a Stack Pointer
+
+Place 0010H
+String "5    "
 
 Place 4000H
 String "XXXXX"
@@ -54,7 +59,7 @@ MenuPrincipal:
 	String "|1-COMPRAR     |"
 	String "|2-USAR CARTAO |"
 	String "|3-STOCK       |"
-	String "---------------|"
+	String "|4-Faz Cartao  |"
 	
 Place 280H
 Menu_Estacoes:
@@ -198,7 +203,7 @@ Stock2:
 
 Place 980H
 Password:
-	String "1aM!            "
+	String "02024"
 	
 Place 0A00H
 StockErr:
@@ -264,9 +269,16 @@ TalaoPepe:
 	String "Inserido:   0,00"
 	String "----------------"
 	String "1) Continuar    "
-Place 0140H
-Carregasaldo:
-	String "0,00            "
+
+Place 0E10H
+Cartao_feito2:
+	String "Cartao feito    "
+	String "                "
+	String "      Cartao    "
+	String "  Numero: XXXXX "
+	String "                "
+	String " 1) Continuar   "
+	String " 2) Usar Cartao "
 Place 0000H
 Inicio:
 	MOV R0, Principio
@@ -291,17 +303,104 @@ Principio:
 		MOV R0, PER_EN					;Le o endereço onde esta o PER_EN
 		MOVB R1, [R0]					;Le o PER_EN da memoria
 		CMP R1, 1						;Compara o PER_EN com o valor 1
-		JEQ	salt 					;Opção Comaprar	
+		JEQ	MComparBilhet					;Opção Comaprar	
 		CMP R1, 2						;Compara o PER_EN com o valor 2
 		JEQ MCartao						;Opcão Usar Cartao
 		CMP R1, 3						;Compara o PER_EN com o valor 3
-		JEQ s						;Opcão Stock
+		JEQ Stoc						;Opcão Stock
+		CMP R1, 4
+		JEQ FazCartao
 	JMP Le_PER_EN					;Caso nao tenha sido introduzido nenhum valor de PER_EN valido, o mesmo fica num ciclo
 	;----------------------------------------
-	s:
-	JMP Stock
-	salt:
-	JMP MComparBilhete
+MComparBilhet:
+JMP MComparBilhete
+Stoc:
+JMP Stock
+
+	FazCartao:
+	   CALL cartao_operacao
+		MOV R2, Cartao_feito2			;Carrega o endereço do menu de produtos
+		CALL MostrarDisplay				;Mostra o menu de produtos
+		CALL LimpaPerifericos			;Limpa os perifericos de entrada
+		
+		Faz_Cart:
+			MOV R0, PER_EN					;Le o endereço de PER_EN
+			MOVB R1, [R0]					;Le o PER_EN da memoria
+			CMP R1, 1						;Compara o PER_EN com o valor 1
+			JEQ	ligado 					;Opção Cartao para continuar
+			CMP R1,2
+		    JEQ MCartao
+		JMP Faz_Cart	
+		
+    cartao_operacao:
+	PUSH R0
+	PUSH R1
+	PUSH R2
+	PUSH R3
+	PUSH R4
+	PUSH R5
+	PUSH R6
+	PUSH R7
+	PUSH R8
+	PUSH R9
+	MOV R4, 0010H
+	MOVB R0, [R4]         ;numero de cartoes(35h)
+	MOV R1, TabelaCartoesInicio    ;endreço onde estão os cartoes
+	MOV R2, 0010H                  ;IR DE LINHA A LINHA CONSOANTE O NUMERO DE CARTOES PEPE
+	MOV R5, R0                      ;Adiciona um ao numero_cartoes  
+	ADD R5, 1H
+	MOV R6, 30H  ;ZERO
+	MOV R7, 5       ;NUMERO DE DIGITOS DO CODIGO PEPE(0 a 4)
+	ciclo_cartao_at:
+	ADD R1, R2    ;Soma 1 linha a cada  cartao(0010H)
+	ADD R6,1H
+	CMP R6, R5    ;se o numero de cartoes for igual para
+	JEQ fimmmmm
+	JMP ciclo_cartao_at
+	
+	fimmmmm:
+	MOV R9, 0E10H ;ENDREÇO DO DISPLAY 
+	SUB R1,R2
+	MOVB [R4],R6            ;ATRIBUI AO ENDREÇO O NOVO REGISTOS DE CARTOES
+	JMP ciclo_preencher_digitos_pepe
+	ciclo_preencher_digitos_pepe: ;"digitos aleatorios"
+	MOVB[R1], R5
+	MOVB[R9],R5
+	ADD R9,1
+	ADD R1, 1H
+	ADD R5,1H
+	ADD R8,1
+	CMP R7,R8
+	JEQ fim_oficial
+	JMP ciclo_preencher_digitos_pepe
+	;[R1] SERÁ O ENDREÇO QUE IRA SER GERADO UM NOVO CARTAO 
+	fim_oficial:
+	MOV R9,30H
+	MOVB[R1], R9
+	ADD R1,1
+	MOVB[R1], R9
+	ADD R1,1
+	MOV R9, 2CH ;virgula
+	MOVB[R1], R9
+	ADD R1,1
+	MOV R9,30H
+	MOVB[R1], R9
+	ADD R1,1
+	MOVB[R1], R9
+	;meter agora no display
+	
+	POP R9
+	POP R8
+	POP R7
+	POP R6
+	POP R5
+	POP R4
+	POP R3
+	POP R2 
+	POP R1
+	POP R0	
+	RET
+
 	MCartao:
 		MOV R2, MenuCodigoPepe			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
@@ -354,7 +453,7 @@ Erro_Pepe:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	ligado 					 ;Opção Cartao para continuar	
+	JEQ	aux100 					 ;Opção Cartao para continuar	
 	JMP ErroPepe		
 
 
@@ -389,7 +488,7 @@ MBilhete:
 	CMP R1, 1						;Compara o PER_EN com o valor 1
 	JEQ	MBilhete2 					 ;Opção Cartao para continuar				
 	CMP R1, 2						;Compara o PER_EN com o valor 1
-	JEQ	ligado 					 ;Opção Cartao para sair
+	JEQ	aux100 					 ;Opção Cartao para sair
 	JMP CiloBilhete1	
 MBilhete2:
 	MOV R2, Bilhtete2			;Carrega o endereço do menu de produtos
@@ -411,7 +510,7 @@ MBilhete3:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 2						;Compara o PER_EN com o valor 1
-	JEQ	ligado 					 ;Opção Sair	
+	JEQ	aux100 					 ;Opção Sair	
 	JMP CiloBilhete3					
 	
 MRecarregar:
@@ -868,6 +967,10 @@ protrc:								;(Proximo Troco)
 	POP R0							;Restaura o valor de R0
 	RET								;Vai para o endereço guardado na SP
 	
+;---------------------------------------------------Taloes e Modificaçoes associadas----------------------------------------------------------------
+
+	
+;--------------------Faz uma limpeza nas moedas Inseridas no talao intermediario-------------------------------
 ApagaInt:
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -893,34 +996,8 @@ proint:
 	POP R0							;Restaura o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
 	
-	
-	
-ApagaIntTalao:
-	PUSH R0							;Guarda o valor de R0 na Sp
-	PUSH R1							;Guarda o valor de R1 na Sp
-	PUSH R2							;Guarda o valor de R2 na Sp
-	PUSH R3							;Guarda o valor de R3 na Sp
-	MOV R0, 5ACH					;Move para R0 o valor do endereço de memoria do valor introduzido do talao intermedio 
-	MOV R2, 2CH						;Move para R2 o valor da virgula
-	MOV R3, 1						;Move 1 para R3 para ser a variavel de controlo
-Compereint2:
-	MOVB R1, [R0]					;Move para R1 o valor apontado por R0 do valor introduzido
-	CMP R1, R2						;Verifica se é uma virgula 
-	JEQ proint2						;Se for a virgula pula para o proximo endereço
-	MOV R1, 30H						;Caso nao seja a virgula mete a 0
-	MOVB [R0], R1					;Move R1 para a memoria de R0
-proint2:
-	ADD R0, 1						;Adiciona 1 a R0 para passar para o proximo endereço
-	ADD R3, 1						;Adiciona 1 a variavel de controlo
-	CMP R3, 4						;Compara a variavel de controlo com o valor 4
-	JLE Compereint2					;Caso nao seja 5 ele faz para os restantes digitos
-	POP R3							;Restaura o valor de R3
-	POP R2							;Restaura o valor de R2
-	POP R1							;Restaura o valor de R1
-	POP R0							;Restaura o valor de R0
-	RET								;Vai para o endereço de memoria guardado pela Sp
-	
-;------------------------------------	
+
+;------------------------Modifica Preço para colocar no Talão------------	
 ModificaPag:						;(Modifica o preço no talao intermedio)
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -941,7 +1018,8 @@ ModPag:
 	POP R1							;Restaura o valor de R1
 	POP R0							;Restaura o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
-
+	
+;----------------------------COLOCA O NOME DO PRODUTO QUE O CLIENTE COMPROU----------------------------------------
 ModificaTalao:						;(Modifica o talao final de compra, coloca o nome do produto e o respetivo preço que quer comprar)
 	PUSH R0							;Guarda o valor de R0 na Sp
 	PUSH R1							;Guarda o valor de R1 na Sp
@@ -960,54 +1038,43 @@ ModfTa:
 	POP R1							;Restaura o valor de R1
 	POP R0							;Restaira o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
+;---------------------------------------------------------------------------------------------------------------------
 
 InicStock:
 	MOV R2, StockIni				;Carrega o endereço do menu de Stock
 	CALL MostrarDisplay				;Mostra o menu de produtos
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
-PASSS:
-	CALL IntroduzPass				;Chama a Rotina para introduzir a password
+
 Pass_OP:							;(NOTA: Só é possivel prosseguir/voltar atraz depois de introduzir a password)
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Move para R1 o valor do PER_EN
 	CMP R1, 1						;Caso esta seja 1 verifica a password
-	JEQ VerificaPass				;Salta para verifica a password
+	JEQ verificaPassword				;Salta para verifica a password
 	CMP R1, 2						;Caso seja dois voltra ao menu inicial
 	JEQ acabar						;Salta para acabar
 	JMP Pass_OP						;Caso contrario fica em loop ate conseguir ter um PER_EN valido
 
-IntroduzPass:						
-	MOV R5, 1						;Move 1 para R5, a variavel de controlo
-	MOV R4, 85H						;Move para R4 o endereço de memoria onde esta a password
-	MOV R6, 20H						;Move para R6 o valor 20H, o espaço em branco
-IntroduzPasss:
-	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
-	MOVB R1, [R0]					;Move para R1 o valor do PER_EN
-	CMP R1, R6						;Compara R1 com R6
-	JEQ IntroduzPasss				;Caso sejam iguais, ele tem de introduzir um caracter da password(ficando em loop ate ser inserido um caracter valido) (NOTA: A PASSWORD NAO PODE CONTER UM ESPAÇO)
-	MOVB [R4], R1					;Move para a memoria o valor de R1
-	ADD R4, 1						;Adiciona 1 unidade a R4
-	ADD R5, 1						;Adiciona 1 unidade a R5
-	CMP R5, 4						;Compara R5 com o valor 4
-	CALL LimpaPerifericos			;Limpa o periferico de entrada
-	JLE	IntroduzPasss				;Caso o valor seja menor ou igual a 4 este volta para introduzpass
-	RET								;Volta para o endereço de memoria guardado pela Sp
+verificaPassword:
+	MOV R0, EntradaCodigoCartao ; guarda no R0 o endereço onde começa o periferico que lê o cartão PEPE
+	MOV R1, 24H					; guarda no R1 o endereço do ultimo periferico que lê o codigo introduzido
+	MOV R2, PasswordLugar ; guarda no R2 o endereço onde está armazenado a palavra-passe
+	MOV R3, 4040H				; endereço do ultimo cartao pepe
+	MOV R6, 30H					; guarda no registo R6 o valor 30 em hexadecimal para depois ser adicionado ao digito introduzido
+cicloVerificaPassword:
+	MOVB R4, [R0]				; guarda no R4 o valor do digito a ser avaliado que se encontra no endereço guardado 
+	ADD R4, R6					; adiciona o valor 30H porque assim poderá coincidir com o valor guardado na password
+	MOVB R5, [R2]				; guarda no R5 o digito da password que será avaliado
+	CMP R4,R5					
+	JNE Erro					;se o digito introduzido for diferente ao digito avaliado significa que não coincidem, saltando para o erro
+	ADD R0,1					; caso contrario é adicionado 1 valor aos endereços dos digitos para avaliar os seguintes digitos
+	ADD R2,1
+	CMP R0,R1					; compara o endereço do seguinte digito introduzido com o ultimo endereço do periferico de entrada
+	JGT FimVerificaPassword		; se o endereço for maior do que o ultimo endereço do periferico de entrada, significa que todos os digitos coincidiram, logo a palavra- passe coincide
+	JMP cicloVerificaPassword	; caso contrario, volta ao inicio do ciclo
+
+FimVerificaPassword:
+	RET
 	
-VerificaPass:						;(Verifica se a password esta correta)
-	MOV R0, 85H						;Move para R0 o endereço de memoria onde esta a password inserida
-	MOV R4, 1						;Move 1 unidade para R4, variavel de controlo
-	MOV R2, Password				;Move para R2 o endereço de memoria para onde esta guardado a password
-VerificaPasss:
-	MOVB R1, [R0]					;Move para R1 o caracter da password inserida
-	MOVB R3, [R2]					;Move para R3 o caracter da password real
-	CMP R1, R3						;Compara os dois
-	JNE Erro						;Caso nao sejam iguais ele pula para o ERRO
-	ADD R0, 1						;Caso sejam iguais ele adiciona 1 a R0
-	ADD R2, 1						;Adiciona 1 a R2
-	ADD R4, 1						;Adiciona 1 a R4, variavel de controlo
-	CMP R4, 4						;Compara R4 com o valor 4
-	JLE VerificaPasss				;Caso o valor seja menor ou igual a 4 ele pula para verificapass para verificar os caracteres restantes da password
-	RET								;Volta para o endereço de memoria guardado pela Sp
 Erro:
 	MOV R2, StockErr				;Move para R2 o endereço do display do StockErr
 	CALL MostrarDisplay				;Chama a Rotina para Mostrar o display

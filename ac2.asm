@@ -2,13 +2,14 @@
 PER_EN 					EQU 30H		;Endereço do PER_EN
 ON_OFF  				EQU 1A0H    ;BOTAO ON/OFF
 EntradaCodigoCartao		EQU 20H	;Endereço do periferico para submeter o código do Cartão PEPE
-EntradaColocardinheiroCartao		EQU 10H	;Endereço do periferico para submeter o código do Cartão PEPE
 
 ; Periferico de Saida
 Display 	EQU 40H  ;Endereço onde começa o display
 Display_end EQU 175  ;Endereço onde termina o display
 CaracterVazio 	 		EQU 20 			;limpa o ecra
 
+Numero_Cartoes              EQU 35H        ;numero de cartoes na memoria(CORRESPONDE A 5 )
+EntradaColocardinheiroCartao		EQU 10H	      ;Endereço de numero_cartoes
 
 
 TabelaCartoesInicio 	EQU	4000H
@@ -22,6 +23,9 @@ novoCodigoPepe          EQU 3FC0H; endereço de memoria do numero do pepe que fo
 
 ;SP
 StackPointer 	EQU 6000H ;Endereço onde começa a Stack Pointer
+
+Place 0010H
+String "5    "
 
 Place 4000H
 String "XXXXX"
@@ -55,7 +59,7 @@ MenuPrincipal:
 	String "|1-COMPRAR     |"
 	String "|2-USAR CARTAO |"
 	String "|3-STOCK       |"
-	String "---------------|"
+	String "|4-Faz Cartao  |"
 	
 Place 280H
 Menu_Estacoes:
@@ -265,9 +269,16 @@ TalaoPepe:
 	String "Inserido:   0,00"
 	String "----------------"
 	String "1) Continuar    "
-Place 0140H
-Carregasaldo:
-	String "0,00            "
+
+Place 0E10H
+Cartao_feito2:
+	String "Cartao feito    "
+	String "                "
+	String "      Cartao    "
+	String "  Numero: XXXXX "
+	String "                "
+	String " 1) Continuar   "
+	String " 2) Usar Cartao "
 Place 0000H
 Inicio:
 	MOV R0, Principio
@@ -292,17 +303,104 @@ Principio:
 		MOV R0, PER_EN					;Le o endereço onde esta o PER_EN
 		MOVB R1, [R0]					;Le o PER_EN da memoria
 		CMP R1, 1						;Compara o PER_EN com o valor 1
-		JEQ	salt 					;Opção Comaprar	
+		JEQ	MComparBilhet					;Opção Comaprar	
 		CMP R1, 2						;Compara o PER_EN com o valor 2
 		JEQ MCartao						;Opcão Usar Cartao
 		CMP R1, 3						;Compara o PER_EN com o valor 3
-		JEQ s						;Opcão Stock
+		JEQ Stoc						;Opcão Stock
+		CMP R1, 4
+		JEQ FazCartao
 	JMP Le_PER_EN					;Caso nao tenha sido introduzido nenhum valor de PER_EN valido, o mesmo fica num ciclo
 	;----------------------------------------
-	s:
-	JMP Stock
-	salt:
-	JMP MComparBilhete
+MComparBilhet:
+JMP MComparBilhete
+Stoc:
+JMP Stock
+
+	FazCartao:
+	   CALL cartao_operacao
+		MOV R2, Cartao_feito2			;Carrega o endereço do menu de produtos
+		CALL MostrarDisplay				;Mostra o menu de produtos
+		CALL LimpaPerifericos			;Limpa os perifericos de entrada
+		
+		Faz_Cart:
+			MOV R0, PER_EN					;Le o endereço de PER_EN
+			MOVB R1, [R0]					;Le o PER_EN da memoria
+			CMP R1, 1						;Compara o PER_EN com o valor 1
+			JEQ	ligado 					;Opção Cartao para continuar
+			CMP R1,2
+		    JEQ MCartao
+		JMP Faz_Cart	
+		
+    cartao_operacao:
+	PUSH R0
+	PUSH R1
+	PUSH R2
+	PUSH R3
+	PUSH R4
+	PUSH R5
+	PUSH R6
+	PUSH R7
+	PUSH R8
+	PUSH R9
+	MOV R4, 0010H
+	MOVB R0, [R4]         ;numero de cartoes(35h)
+	MOV R1, TabelaCartoesInicio    ;endreço onde estão os cartoes
+	MOV R2, 0010H                  ;IR DE LINHA A LINHA CONSOANTE O NUMERO DE CARTOES PEPE
+	MOV R5, R0                      ;Adiciona um ao numero_cartoes  
+	ADD R5, 1H
+	MOV R6, 30H  ;ZERO
+	MOV R7, 5       ;NUMERO DE DIGITOS DO CODIGO PEPE(0 a 4)
+	ciclo_cartao_at:
+	ADD R1, R2    ;Soma 1 linha a cada  cartao(0010H)
+	ADD R6,1H
+	CMP R6, R5    ;se o numero de cartoes for igual para
+	JEQ fimmmmm
+	JMP ciclo_cartao_at
+	
+	fimmmmm:
+	MOV R9, 0E4AH ;ENDREÇO DO DISPLAY 
+	SUB R1,R2
+	MOVB [R4],R6            ;ATRIBUI AO ENDREÇO O NOVO REGISTOS DE CARTOES
+	JMP ciclo_preencher_digitos_pepe
+	ciclo_preencher_digitos_pepe: ;"digitos aleatorios"
+	MOVB[R1], R5
+	MOVB[R9],R5
+	ADD R9,1
+	ADD R1, 1H
+	ADD R5,1H
+	ADD R8,1
+	CMP R7,R8
+	JEQ fim_oficial
+	JMP ciclo_preencher_digitos_pepe
+	;[R1] SERÁ O ENDREÇO QUE IRA SER GERADO UM NOVO CARTAO 
+	fim_oficial:
+	MOV R9,30H
+	MOVB[R1], R9
+	ADD R1,1
+	MOVB[R1], R9
+	ADD R1,1
+	MOV R9, 2CH ;virgula
+	MOVB[R1], R9
+	ADD R1,1
+	MOV R9,30H
+	MOVB[R1], R9
+	ADD R1,1
+	MOVB[R1], R9
+	;meter agora no display
+	
+	POP R9
+	POP R8
+	POP R7
+	POP R6
+	POP R5
+	POP R4
+	POP R3
+	POP R2 
+	POP R1
+	POP R0	
+	RET
+
 	MCartao:
 		MOV R2, MenuCodigoPepe			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
@@ -355,7 +453,7 @@ Erro_Pepe:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	ligado 					 ;Opção Cartao para continuar	
+	JEQ	aux100 					 ;Opção Cartao para continuar	
 	JMP ErroPepe		
 
 
@@ -390,7 +488,7 @@ MBilhete:
 	CMP R1, 1						;Compara o PER_EN com o valor 1
 	JEQ	MBilhete2 					 ;Opção Cartao para continuar				
 	CMP R1, 2						;Compara o PER_EN com o valor 1
-	JEQ	ligado 					 ;Opção Cartao para sair
+	JEQ	aux100 					 ;Opção Cartao para sair
 	JMP CiloBilhete1	
 MBilhete2:
 	MOV R2, Bilhtete2			;Carrega o endereço do menu de produtos
@@ -412,7 +510,7 @@ MBilhete3:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 2						;Compara o PER_EN com o valor 1
-	JEQ	ligado 					 ;Opção Sair	
+	JEQ	aux100 					 ;Opção Sair	
 	JMP CiloBilhete3					
 	
 MRecarregar:
