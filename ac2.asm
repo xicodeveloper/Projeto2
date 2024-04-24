@@ -348,9 +348,9 @@ JMP Stock
 	MOV R1, TabelaCartoesInicio    ;endreço onde estão os cartoes
 	MOV R2, 0010H                  ;IR DE LINHA A LINHA CONSOANTE O NUMERO DE CARTOES PEPE
 	MOV R5, R0                      ;Adiciona um ao numero_cartoes  
-	ADD R5, 1H
+	ADD R5, 1H                     ;1 para percorrer os cartoes
 	MOV R6, 30H  ;ZERO
-	MOV R7, 5       ;NUMERO DE DIGITOS DO CODIGO PEPE(0 a 4)
+	MOV R7, 5       ;NUMERO DE DIGITOS DO CODIGO PEPE
 	ciclo_cartao_at:
 	ADD R1, R2    ;Soma 1 linha a cada  cartao(0010H)
 	ADD R6,1H
@@ -360,21 +360,21 @@ JMP Stock
 	
 	fimmmmm:
 	MOV R9, 0E4AH ;ENDREÇO DO DISPLAY 
-	SUB R1,R2
+	SUB R1,R2  ; linha para inserir os cartoes
 	MOVB [R4],R6            ;ATRIBUI AO ENDREÇO O NOVO REGISTOS DE CARTOES
 	JMP ciclo_preencher_digitos_pepe
 	ciclo_preencher_digitos_pepe: ;"digitos aleatorios"
-	MOVB[R1], R5
-	MOVB[R9],R5
-	ADD R9,1
-	ADD R1, 1H
-	ADD R5,1H
-	ADD R8,1
+	MOVB[R1], R5 ;endreço para a memoria
+	MOVB[R9],R5  ;endreço display
+	ADD R9,1 ;percorrer o display
+	ADD R1, 1H ;percorrer a memoria
+	ADD R5,1H ; conteudo para o display/memoria
+	ADD R8,1 ;var controlo para depois parar 
 	CMP R7,R8
 	JEQ fim_oficial
 	JMP ciclo_preencher_digitos_pepe
 	;[R1] SERÁ O ENDREÇO QUE IRA SER GERADO UM NOVO CARTAO 
-	fim_oficial:
+	fim_oficial:;depois é colocar o saldo a 00,00 na memoria
 	MOV R9,30H
 	MOVB[R1], R9
 	ADD R1,1
