@@ -19,7 +19,8 @@ TabelaCartoesInicio 	EQU	4000H
 
 
 PasswordLugar			EQU 0980H
-CartaoSubmetido 		EQU 3FE0H
+ApontadorCartaoaUtilizar 		EQU 3FE0H; aponta para o cartão pepe que está a ser utilizado
+NULL 							EQU 0;
 novoCodigoPepe          EQU 3FC0H; endereço de memoria do numero do pepe que foi gerado
 
 ;SP
@@ -29,24 +30,24 @@ Place 0010H
 String "5    "
 
 Place 4000H
-String "XXXXX"
-String "00,00"
+String "12345"
+String "15,90"
 
 Place 4010H
-String "XXXXX"
-String "00,00"
+String "21214"
+String "24,10"
 
 Place 4020H
-String "XXXXX"
-String "00,00"
+String "72984"
+String "08,00"
 
 Place 4030H
-String "XXXXX"
-String "00,00"
+String "18352"
+String "81,30"
 
 Place 4040H
-String "XXXXX"
-String "00,00"
+String "98765"
+String "99,50"
 
 Place 3FC0H
 String "000"
@@ -300,6 +301,9 @@ Principio:
 		MOV R2,MenuPrincipal 
 		CALL MostrarDisplay
 		CALL LimpaPerifericos		;limpa os perifericos
+		MOV R9, ApontadorCartaoaUtilizar
+		MOV R0, NULL
+		MOV [R9], R0
 	Le_PER_EN:
 		MOV R0, PER_EN					;Le o endereço onde esta o PER_EN
 		MOVB R1, [R0]					;Le o PER_EN da memoria
@@ -418,16 +422,19 @@ JMP Stock
 	CMP R1, 5						;Compara com o valor de saida 5
 	JEQ ligado					;Caso seja igual volta para o inicio
 	JMP Le_Cart						;Caso nao seja selecionado nenhum valor de PER_EN valido, o mesmo fica num ciclo
-	
+
+
+
+
 verificaCodigoPepe:
+	
 	MOV R1, 24H					; guarda no R1 o endereço do ultimo periferico que lê o cartão PEPE
 	MOV R2, TabelaCartoesInicio ; guarda no R2 o endereço do inicio da tabela onde são armazenadas os cartoes pepe
 	MOV R3, 4040H				; endereço do ultimo cartao pepe
 	MOV R11, UltimoEndrecoPEPE
-	ADD R11, 1
-	MOVB R10 ,[R11]
-	ADD R9, R10
-	ADD R3, R9
+	MOV R10 ,[R11]
+	MOV R9, 10H
+	ADD R3, R10
 cicloVerificaCodigoPepe:
 	MOV R0, EntradaCodigoCartao ; guarda no R0 o endereço onde começa o periferico que lê o cartão PEPE					
 	MOV R6, R2					; o R6 será usado para selecionar os digitos de cada codigo, neste momento é atribuido ao R6 o endereço do primeiro digito do codigo
@@ -445,14 +452,15 @@ cicloAuxVerificaCodigoPepe:
 	JMP cicloAuxVerificaCodigoPepe
 
 FimCicloAux:
-	ADD R2, 5
-	ADD R2, 5
+	ADD R2, R9
 	CMP R2, R3
 	JLE cicloVerificaCodigoPepe
 	JMP Erro_Pepe
 
 
 FimVerificaCodigoPepe:
+	MOV R9,ApontadorCartaoaUtilizar
+	MOV [R9],R2 
 	RET
 	
 Erro_Pepe:
@@ -460,15 +468,53 @@ Erro_Pepe:
 		CALL MostrarDisplay				;Mostra o menu de produtos
 		CALL LimpaPerifericos			;Limpa os perifericos de entrada
 	ErroPepe:
+	MOV R9,ApontadorCartaoaUtilizar
+	MOV [R9],R2 
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1
-	JEQ	aux100 					 ;Opção Cartao para continuar	
+	JEQ	aux98					 ;Opção Cartao para continuar	
 	JMP ErroPepe		
+
+aux98:
+JMP ligado
+
+MostraSaldo:
+
+	PUSH R0
+	PUSH R1
+	PUSH R2
+	PUSH R3
+	PUSH R9
+
+	MOV R9,ApontadorCartaoaUtilizar ; guarda em R9 o endereço de memoria onde esta guardado o apntador
+	MOV R0, [R9]					; guarda em R0 o endereço que aponta o apontador
+	ADD R0, 5						; guarda em R0 o endereço do primeiro digito do saldo do cartão pepe
+	MOV R3, R0						
+	ADD R3,4 						; guarda em R3 o endereço do ultimo digito do saldo do cartão pepe
+	MOV R2,0B97H					; guarda em R2 o endereço onde deve de mostrar o saldo
+cicloMostraSaldo:
+	
+	MOVB R1, [R0]					;guarda em R1 o digito a ser transferido para o display
+	MOVB [R2], R1
+	ADD R2,1
+	ADD R0,1
+	CMP R0,R3
+	JLE cicloMostraSaldo
+
+	
+	POP R9
+	POP R3
+	POP R2
+	POP R1
+	POP R0
+	RET
+
 
 
 MPepeContinuar:
 	CALL verificaCodigoPepe
+	CALL MostraSaldo
 	MOV R2, MenuSaldoPepe			;Carrega o endereço do menu de produtos
 	CALL MostrarDisplay				;Mostra o menu de produtos
 	CALL LimpaPerifericos			;Limpa os perifericos de entrada
@@ -1069,10 +1115,8 @@ verificaPassword:
 	MOV R1, 24H					; guarda no R1 o endereço do ultimo periferico que lê o codigo introduzido
 	MOV R2, PasswordLugar ; guarda no R2 o endereço onde está armazenado a palavra-passe
 	MOV R3, 4040H				; endereço do ultimo cartao pepe
-	MOV R6, 30H					; guarda no registo R6 o valor 30 em hexadecimal para depois ser adicionado ao digito introduzido
 cicloVerificaPassword:
-	MOVB R4, [R0]				; guarda no R4 o valor do digito a ser avaliado que se encontra no endereço guardado 
-	ADD R4, R6					; adiciona o valor 30H porque assim poderá coincidir com o valor guardado na password
+	MOVB R4, [R0]				; guarda no R4 o valor do digito a ser avaliado que se encontra no endereço guardado 					; adiciona o valor 30H porque assim poderá coincidir com o valor guardado na password
 	MOVB R5, [R2]				; guarda no R5 o digito da password que será avaliado
 	CMP R4,R5					
 	JNE Erro					;se o digito introduzido for diferente ao digito avaliado significa que não coincidem, saltando para o erro
