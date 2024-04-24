@@ -10,6 +10,7 @@ CaracterVazio 	 		EQU 20 			;limpa o ecra
 
 Numero_Cartoes              EQU 35H        ;numero de cartoes na memoria(CORRESPONDE A 5 )
 EntradaColocardinheiroCartao		EQU 10H	      ;Endereço de numero_cartoes
+UltimoEndrecoPEPE                   EQU 5100H ;ENDREÇO
 
 
 TabelaCartoesInicio 	EQU	4000H
@@ -374,7 +375,7 @@ JMP Stock
 	JEQ fim_oficial
 	JMP ciclo_preencher_digitos_pepe
 	;[R1] SERÁ O ENDREÇO QUE IRA SER GERADO UM NOVO CARTAO 
-	fim_oficial:;depois é colocar o saldo a 0,00
+	fim_oficial:;depois é colocar o saldo a 00,00 na memoria
 	MOV R9,30H
 	MOVB[R1], R9
 	ADD R1,1
@@ -388,7 +389,11 @@ JMP Stock
 	ADD R1,1
 	MOVB[R1], R9
 	;meter agora no display
-	
+	MOV R9, UltimoEndrecoPEPE
+	MOV R8, 0010H
+	MOV R7, [R9]
+	ADD R7,R8
+	MOV [R9],R7
 	POP R9
 	POP R8
 	POP R7
@@ -418,6 +423,11 @@ verificaCodigoPepe:
 	MOV R1, 24H					; guarda no R1 o endereço do ultimo periferico que lê o cartão PEPE
 	MOV R2, TabelaCartoesInicio ; guarda no R2 o endereço do inicio da tabela onde são armazenadas os cartoes pepe
 	MOV R3, 4040H				; endereço do ultimo cartao pepe
+	MOV R11, UltimoEndrecoPEPE
+	ADD R11, 1
+	MOVB R10 ,[UltimoEndrecoPEPE]
+	ADD R9, R10
+	ADD R3, R9
 cicloVerificaCodigoPepe:
 	MOV R0, EntradaCodigoCartao ; guarda no R0 o endereço onde começa o periferico que lê o cartão PEPE					
 	MOV R6, R2					; o R6 será usado para selecionar os digitos de cada codigo, neste momento é atribuido ao R6 o endereço do primeiro digito do codigo
