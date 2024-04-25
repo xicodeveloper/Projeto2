@@ -98,7 +98,7 @@ Menu_Porto:
 	String "----------------"
 	String " Porto 1/2      "
 	String "0) Sair         "
-	String "1) Douro  3,50  "
+	String "1) Douro    3,50"
 	String "2) Conegos  2,50"
 	String "3) Dragao   1,50"
 	String "7) Seguinte     "
@@ -281,6 +281,17 @@ Cartao_feito2:
 	String "                "
 	String " 1) Continuar   "
 	String " 2) Usar Cartao "
+
+Place 0E90H
+TalaoCartaoPepe:
+	String "----------------"
+	String "   PEPE: xxxxx  "
+	String "->              "
+	String "-> Saldo:   1,00"
+	String "->Restante: 1,00"
+	String "----------------"
+	String "1) Continuar    "
+
 Place 0000H
 Inicio:
 	MOV R0, Principio
@@ -532,7 +543,7 @@ Le_Cart2:
 	JMP Le_Cart2			
 	aux99:
 	JMP ligado
-	MComparBilhetej:
+MComparBilhetej:
 	JMP MComparBilhete
 MBilhete:
 	MOV R2, Bilhtete1			;Carrega o endereço do menu de produtos
@@ -688,9 +699,11 @@ M_Lisbon_ciclo_2:
 	CMP R1, 7						;Compara com o valor para o menu anterior
 	JEQ MLisboa					;Faz um salto para o menu de Lisboa anterior
 	CMP R1, 0						;Comapra com o valor 0, valor de saida
-	JEQ aux					;Caso seja igual volta para o ligado
+	JEQ aux97				;Caso seja igual volta para o ligado
 	JMP M_Lisbon_ciclo_2				;Faz um loop ate o PER_EN ser valido
-	
+
+aux97:
+	JMP ligado	
 
 aux2:
 	JMP EstacaoCompaPorto3				;Salto auxiliar, pois constantes out of bonds
@@ -699,84 +712,89 @@ EstacaoCompaLisboa1:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 72H						;Move para R0 a posição do PER_EN 1 ou 4
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
+	CALL ModificaTalaopepe
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
-	CALL Paga						;Rotina para fazer o pagamento do produto
-	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	CALL IncrementaNPepe
-	MOV R2, Talao					;Move para R2 o endereço do display do talao
-	CALL MostrarDisplay				;Mostra o display do talao
-	CALL LimpaPerifericos			;Limpa o periferico de entrada
-	JMP cil							;Fica em loop ate continuar para o menu inicial
+	MOV R1,ApontadorCartaoaUtilizar
+	MOV R1,[R1]
+	MOV R2,NULL
+	CMP R1,R2
+	JEQ PagaSemPepe
+	JNE PagaComPepe						;Fica em loop ate continuar para o menu inicial
 EstacaoCompaLisboa2:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 82H						;Move para R0 a posição do PER_EN 2 ou 5
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
+	CALL ModificaTalaopepe
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
-	CALL Paga						;Rotina para fazer o pagamento do produto
-	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	CALL IncrementaNPepe
-	MOV R2, Talao					;Move para R2 o endereço do display do talao
-	CALL MostrarDisplay				;Mostra o display do talao
-	CALL LimpaPerifericos			;Limpa o periferico de entrada
-	JMP cil							;Fica em loop ate continuar para o menu inicial
+	MOV R1,ApontadorCartaoaUtilizar
+	MOV R1,[R1]
+	MOV R2,NULL
+	CMP R1,R2
+	JEQ PagaSemPepe
+	JNE PagaComPepe						;Fica em loop ate continuar para o menu inicial
 EstacaoCompaLisboa3:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 92H						;Move para R0 a posição do PER_EN 3 ou 6
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
+	CALL ModificaTalaopepe
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
-	CALL Paga						;Rotina para fazer o pagamento do produto
-	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	CALL IncrementaNPepe
-	MOV R2, Talao					;Move para R2 o endereço do display do talao
-	CALL MostrarDisplay				;Mostra o display do talao
-	CALL LimpaPerifericos			;Limpa o periferico de entrada
-	JMP cil							;Fica em loop ate continuar para o menu inicial
+	MOV R1,ApontadorCartaoaUtilizar
+	MOV R1,[R1]
+	MOV R2,NULL
+	CMP R1,R2
+	JEQ PagaSemPepe
+	JNE PagaComPepe							;Fica em loop ate continuar para o menu inicial
 	
 EstacaoCompaPorto1:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 72H						;Move para R0 a posição do PER_EN 1 ou 4
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
+	CALL ModificaTalaopepe
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
-	CALL Paga						;Rotina para fazer o pagamento do produto
-	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	CALL IncrementaNPepe
-	MOV R2, Talao					;Move para R2 o endereço do display do talao
-	CALL MostrarDisplay				;Mostra o display do talao
-	CALL LimpaPerifericos			;Limpa o periferico de entrada
-	JMP cil							;Fica em loop ate continuar para o menu inicial
+	MOV R1,ApontadorCartaoaUtilizar
+	MOV R1,[R1]
+	MOV R2,NULL
+	CMP R1,R2
+	JEQ PagaSemPepe
+	JNE PagaComPepe						;Fica em loop ate continuar para o menu inicial
 EstacaoCompaPorto2:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 82H						;Move para R0 a posição do PER_EN 2 ou 5
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
+	CALL ModificaTalaopepe
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
-	CALL Paga						;Rotina para fazer o pagamento do produto
-	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	CALL IncrementaNPepe
-	MOV R2, Talao					;Move para R2 o endereço do display do talao
-	CALL MostrarDisplay				;Mostra o display do talao
-	CALL LimpaPerifericos			;Limpa o periferico de entrada
-	JMP cil							;Fica em loop ate continuar para o menu inicial
+	MOV R1,ApontadorCartaoaUtilizar
+	MOV R1,[R1]
+	MOV R2,NULL
+	CMP R1,R2
+	JEQ PagaSemPepe
+	JNE PagaComPepe						;Fica em loop ate continuar para o menu inicial
 EstacaoCompaPorto3:
 	CALL ApagaInt					;Rotina que apaga o valor introduzido anterior
 	MOV R0, 92H						;Move para R0 a posição do PER_EN 3 ou 6
 	CALL ModificaTalao				;Rotina que modifica o nome do produto comprado no talao
+	CALL ModificaTalaopepe
 	CALL ModificaPag				;Rotina que modifica o preço do talao intermedio
 	CMP R8, 1						;Compara o valor de R8 com o valor 1
 	JEQ cil							;Caso este seja igual a 1 significa que ocorreu um erro no stock
-	CALL Paga						;Rotina para fazer o pagamento do produto
-	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
-	CALL IncrementaNPepe
-	MOV R2, Talao					;Move para R2 o endereço do display do talao
+	MOV R1,ApontadorCartaoaUtilizar
+	MOV R1,[R1]
+	MOV R2,NULL
+	CMP R1,R2
+	JEQ PagaSemPepe
+	JNE PagaComPepe
+
+FimEstacoes:
 	CALL MostrarDisplay				;Mostra o display do talao
 	CALL LimpaPerifericos			;Limpa o periferico de entrada
 	JMP cil							;Fica em loop ate continuar para o menu inicial
@@ -787,8 +805,167 @@ cil:
 	CMP R1, 1						;Compara R1 com o valor
 	JEQ	aux							;Se igual volta para o menu incial
 	JMP cil							;Se não fica em loop
+
+
+PagaSemPepe:
+	CALL Paga						;Rotina para fazer o pagamento do produto
+	CALL calculaTiraMoeda			;Chama a Rotina para calcular o troco retirado do stock
+	CALL IncrementaNPepe
+	MOV R2, Talao					;Move para R2 o endereço do display do talao
+	JMP FimEstacoes
+
+PagaComPepe:
+	MOV R6, ApontadorCartaoaUtilizar
+	
+adicionaCodigoTalao:
+	MOV R0, [R6]
+	MOV R1, 0E90H
+	MOV R3, R0
+	ADD R3, 4
+	MOV R2, 19H
+	ADD R1,R2
+
+cicloAdicionaCodigoTalao:	
+	MOVB R4,[R0]
+	MOVB [R1], R4
+	ADD R0,1
+	ADD R1,1
+	CMP R0,R3
+	JLE cicloAdicionaCodigoTalao
+
+AdicionaSaldo:	
+
+	MOV R1, 0E90H
+	MOV R2, 3BH
+	ADD R1, R2
+	MOV R3, R0
+	ADD R3, 4
+cicloAdicionaSaldo:
+	MOVB R4,[R0]
+	MOVB [R1], R4
+	ADD R0,1
+	ADD R1,1
+	CMP R0,R3
+	JLE cicloAdicionaSaldo
+
+
+FimPagamentoComPepe:
+	CALL SaldoRestante
+	CALL AtualizaSaldo
+	MOV R2, TalaoCartaoPepe					;Move para R2 o endereço do display do talao
+	JMP FimEstacoes
+
+
+
+SaldoRestante:								;Calcula o troco
+	PUSH R0							;Guarda o valor de R0 na Sp
+	PUSH R1							;Guarda o valor de R1 na Sp
+	PUSH R2							;Guarda o valor de R2 na Sp
+	PUSH R3							;Guarda o valor de R3 na Sp
+	PUSH R4							;Guarda o valor de R4 na Sp
+	PUSH R5							;Guarda o valor de R5 na Sp
+	PUSH R6							;Guarda o valor de R6 na Sp
+	PUSH R7							;Guarda o valor de R7 na Sp
+	PUSH R8							;Guarda o valor de R8 na Sp
+	PUSH R9							;Guarda o valor de R9 na Sp
+	PUSH R10						;Guarda o valor de R10 na Sp
+	MOV R0, 0ECEH					;Move para R0 a posiçao dos centimos do valor guardado no cartão pepe no talao final
+	MOV R2, 0EBEH					;Move para R2 a posiçao dos centimos do valor da compra no talao final
+	MOV R4, 0AH						;Move para R4 o valor 10
+	MOV R5, 0EDEH					;Move para R5 a posição dos centimos do troco no talao final
+	MOV R6, 30H						;Move para R6 o valor de 30H (String 0)
+	MOV R7, 0ECBH					;Move para R7 o valor do digito mais significativo do valor guardado no cartão pepe
+	MOV R8, 0						; Move para R8 o valor 0, este registo será usado para ser um "Carry"
+	MOV R9, 2CH						;Move para R9 o valor 2CH que representa a figura " , "
+	MOV R10, 20H					;Move para a R10 o valor 20H que representa um espaço vazio no display
+
+ComparaValor:
+	MOVB R1, [R0]					;Move para R1 o valor do digito do valor guardado no cartão pepe 
+	MOVB R3, [R2]					;Move para R3 o valor do digito valor da compra
+
+	CMP R1,R9						; Compara o valor lido com ","
+	JEQ proximoRestante				; caso sejam iguais, salta para o proximo digito
+
+	CMP R3, R10						; compara o digito lido do valor da compra com 20H, que representa um caracter vazio
+	JNE ContinuaComparar			; caso sejam diferentes continua com a comparação
+	MOV R3, R6						; caso R3 == 20H, o R3 passa a ser 0, R3= 0
+ContinuaComparar:
+	SUB R1,R8						; R1 = R1 - carry(R8)
+	MOV R8,0						; Carry(R8) = 0
+	CMP R1,R3						;Compara os valores
+	JGE	cero						;Se o digito do cartão pepe for maior ou igual que o digito do valor da compra, ele pula para o cero
+	JLT	adiciona10					;Caso contrário ele vai para o adiciona10
+adiciona10:
+	ADD R1, R4						;R1 = R1 + 10
+	SUB R1, R3						;R1 = R1 - R3
+	ADD R1, R6						;Adiciona 30H a R1 para fazer aparecer a String
+	MOVB [R5], R1					;Move o valor do R1 para a posição correspondente no display do saldo restante
+	MOV R8, 1						;Carry(R8) = 1
+	JMP proximoRestante				;Salta para o proximo digito
+cero:								;(Caso o valor dos centimos seja maior que 10)
+	SUB R1, R3						;R1 = R1 - R3
+	ADD R1, R6						;Adiciona 30H a R1 para fazer a String
+	MOVB [R5], R1					;Move o valor do R1 para a posição correspondente no display do saldo restante
+	JMP proximoRestante				;Salta para o proximo digito
+proximoRestante:								;(Proximo digito do saldo restante)
+	SUB R0, 1						;Substrae 1 a R0 para passar para o proximo digito do saldo do cartão pepe
+	SUB R2, 1						;Substrae 1 a R2 para passar para o proximo digito do valor a pagar
+	SUB R5, 1						;Substrae 1 a R5 para passar para o proximo digito do saldo restante
+	CMP R0, R7						;compara R0 com 0ECBH 
+	JGE ComparaValor				;caso R0 > 0ECBH ou R0 == 0ECBH, ainda não acabou de fazer a operação 
+	JLT FimSaldoRestante			; caso R0 < 0ECBH, significa que já foram avaliados todos os digitos
+FimSaldoRestante:
+
+	CMP R8,1						; se a operação acabou e ainda o Carry(R8) conter o valor 1, significa que o saldo no cartão é menor que o valor a pagar
+	JEQ aux							; caso Carry(R8) == 1, manda erro e manda a recarregar --- falta carregar
+	POP R10							;Restaura o valor de R10
+	POP R9							;Restaura o valor de R9
+	POP R8							;Restaura o valor de R8
+	POP R7							;Restaura o valor de R7
+	POP R6							;Restaura o valor de R6
+	POP R5							;Restaura o valor de R5
+	POP R4							;Restaura o valor de R4
+	POP R3							;Restaura o valor de R3
+	POP R2							;Restaura o valor de R2
+	POP R1							;Restaura o valor de R1
+	POP R0							;Restaura o valor de R0
+	RET								;Vai para o endereço guardado na SP
+
+
 aux:
 JMP ligado
+
+
+AtualizaSaldo:
+	PUSH R0
+	PUSH R1
+	PUSH R2
+	PUSH R3
+	
+	MOV R0, ApontadorCartaoaUtilizar
+	MOV R0, [R0]
+	ADD R0, 5
+	MOV R1, 0EDBH
+	MOV R2, 0EDFH
+	
+	
+cicloAtualizaSaldo:
+	MOVB R3,[R1]
+	MOVB [R0], R3
+	ADD R1,1
+	ADD R0,1
+	CMP R1,R2
+	JLE cicloAtualizaSaldo
+	JMP FimAtualizaSaldo 
+	
+
+
+FimAtualizaSaldo:
+	POP R3
+	POP R2
+	POP R1
+	POP R0
+
 
 IncrementaNPepe:
 	PUSH R0
@@ -1094,6 +1271,26 @@ ModfTa:
 	POP R1							;Restaura o valor de R1
 	POP R0							;Restaira o valor de R0
 	RET								;Vai para o endereço de memoria guardado pela Sp
+
+;----------------------------COLOCA O NOME DO PRODUTO QUE O CLIENTE COMPROU----------------------------------------
+ModificaTalaopepe:						;(Modifica o talao final de compra, coloca o nome do produto e o respetivo preço que quer comprar)
+	PUSH R0							;Guarda o valor de R0 na Sp
+	PUSH R1							;Guarda o valor de R1 na Sp
+	PUSH R2							;Guarda o valor de R2 na Sp
+	MOV R3, 1						;Move para R3 o valor de 1 para variavel de controle
+	MOV R2, 0EB2H					;Move para R2 o endereço de memoria do talao final para colocar o nome do produto a comprar
+ModfTaPEPE:
+	MOV R1, [R0]					;Move para R1 as letras do produto a comprar e o preço
+	MOV [R2], R1					;Coloca em na posição de memoria de R2 o nome do produto e o preço
+	ADD R0, 2						;Adiciona 2 a R0 para passar para as proximas letras
+	ADD R2, 2						;Adiciona 2 a R2 para passar para as proximo lugar para escrever o nome do prod
+	ADD R3, 1						;Adiciona 1 unidade a variavel de controlo
+	CMP R3, 7						;Compara a mesma com o valor 7
+	JLE ModfTaPEPE					;Caso esta seja menor ou igual a 7 volta para o ModfTaPEPE
+	POP R2							;Restaura o valor de R2
+	POP R1							;Restaura o valor de R1
+	POP R0							;Restaira o valor de R0
+	RET								;Vai para o endereço de memoria guardado pela Sp	
 ;---------------------------------------------------------------------------------------------------------------------
 
 InicStock:
