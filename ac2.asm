@@ -257,7 +257,7 @@ Place 0D90H
 InserirValor:
 	String "----------------"
 	String "---Recarregar---"
-	String "Inserido:  XX,XX"
+	String "Inserido:  00,00"
 	String "                "
 	String "----------------"
 	String "1) Inserir      "
@@ -296,10 +296,21 @@ TalaoRecarregamento:
 	String "----------------"
 	String "Cartao Carregado"
 	String "                "
-	String "-> Saldo:   1,00"
-	String "                "
+	String "Inserido:  00,00"
+	String "Saldo:     00,00"
 	String "----------------"
 	String "1) Continuar    "
+
+Place 0F90H
+ErroSaldoInsuficiente:
+	String "----- ERRO -----"
+	String "                "
+	String "      Saldo     "
+	String "  Insuficiente  "
+	String "                "
+	String " 1) Cancelar    "
+	String " 2) Recarregar  "
+
 
 Place 0000H
 Inicio:
@@ -586,11 +597,14 @@ MBilhete3:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 2						;Compara o PER_EN com o valor 1
-	JEQ	aux100 					 ;Opção Sair	
+	JEQ	aux96 					 ;Opção Sair	
 	JMP CiloBilhete3					
 	
+aux96:
+	JMP ligado
+
 MRecarregar:
-   CALL CarregaPepe
+   
 	MOV R2, InserirValor			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
 		CALL LimpaPerifericos			;Limpa os perifericos de entrada
@@ -598,12 +612,13 @@ MRecarregar:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1 para selecionar a opção de inserir moedas
-	JEQ Recarrega			;Opção Cartao para continuar	
+	JEQ CarregaPepe			;Opção Cartao para continuar	
 	CMP R1, 2						;Compara o PER_EN com o valor 2 para selecionar a opção de continuar
-	JEQ	ProssegueTalao 			;Opção Cartao para continuar
+	JEQ	Recarrega			;Opção Cartao para continuar
 	JMP MRecarregar2
 
 Recarrega:
+		CALL AtualizaSaldoCartao
 		MOV R2, TalaoRecarregamento			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
 		CALL LimpaPerifericos			;Limpa os perifericos de entrada
@@ -611,63 +626,206 @@ Recarrega:
 		MOV R0, PER_EN					;Le o endereço de PER_EN
 		MOVB R1, [R0]					;Le o PER_EN da memoria	
 		CMP R1, 1						;Compara o PER_EN com o valor 2 para selecionar a opção de continuar
-		JEQ	ProssegueTalao 			;Opção Cartao para continuar
+		JEQ	aux96 			;Opção Cartao para continuar
 		JMP MRecarregar22
 
+
+;------------------------------------------------------------------------------------------------------------------------------------------------------------------
 CarregaPepe:
-		PUSH R0
-		PUSH R1
-		PUSH R2
-		PUSH R3
-		PUSH R4
-		PUSH R5
-		PUSH R6
-		PUSH R7
-		PUSH R8
-		PUSH R9
-		PUSH R10
-		MOV R2, EntradaCodigoCartao
-		ADD R2, 4H  ; ultimo digito inserido pelo cliente
-		MOV R4, 4009H ;PREÇO ULTIMO DIGITO
-		MOV R6,1 ;VAR CONTROLO
-		MOV R7,30H
-		MOV R8,10
-		ciclo_verifica:
-		MOVB R3,[R2] ;PER
-		MOVB R5,[R4] ;MEMORIA
-		SUB R3,R7
-		SUB R5,R7 ;OBTER PARA DECIMAL
-		ADD R5,R3
-		CMP R5,R8
-		JGE overflow
-		ciclo22:
-		ADD R6,1
-		SUB R4,1
-		SUB R2,1
-		CMP R6,5
-		JEQ over
-		JMP ciclo_verifica
-		overflow:
-		MOV R9,R5
-		SUB R9,R8
-		ADD R4,1
-		MOV R10, [R4]
-		ADD R10,R9
-		MOVB[R4],R10
-		JMP ciclo22
-over:
-POP R10
-POP R9
-POP R8
-POP R7
-POP R6
-POP R5
-POP R4
-POP R3
-POP R2
-POP R1
-POP R0
-RET 
+	PUSH R0							;Guarda o R0 na stackpointer
+	MOV R2, FormaPag				;Move para R2 a posição do display da Forma de Pagamento
+	CALL MostrarDisplay				;Mostra o display da Forma de pagamento
+	CALL LimpaPerifericos			;Limpa os perifericos de entrada
+Le_Valor:
+	MOV R0, PER_EN					;Le para R0 o endereço de memoria do PER_EN 
+	MOVB R1, [R0]					;Move para R1 o valor na memoria de R0
+	MOV R2, 0DBFH					;Move Para R2 o endereço do valor introduzido no talao intermedio
+	CMP R1, 1						;Compara o PER_EN a ver se é igual a 1(5 Euros)
+	MOV R0, 615H						;Move para R0 a posição dos 5 euros no display
+	MOV R9, 89FH					;Move para R9 a posição do numero de stock de 5 euros
+	JEQ ContinuaCarregar						;Se o PER_EN for igual a 1 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	CMP R1, 2						;Compara o PER_EN a ver se é igual a 2(2 Euros)
+	MOV R0, 625H						;Move para R0 a posição dos 2 euros no display
+	MOV R9, 8AFH					;Move para R9 a posição do numero de stock de 2 euros
+	JEQ ContinuaCarregar						;Se o PER_EN for igual a 2 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	CMP R1, 3						;Compara o PER_EN a ver se é igual a 3(1 Euro)
+	MOV R0, 635H						;Move para R0 a posição dos 1 euro no display
+	MOV R9, 8BFH					;Move para R9 a posição do numero de stock de 1 euro
+	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 3 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	CMP R1, 4						;Compara o PER_EN a ver se é igual a 4(50 Centimos)
+	MOV R0, 645H						;Move para R0 a posição dos 50 centimos no display
+	MOV R9, 8CFH					;Move para R9 a posição do numero de stock de 50 centimos
+	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 4 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	CMP R1, 5						;Compara o PER_EN a ver se é igual a 5(20 Centimos)
+	MOV R0, 655H						;Move para R0 a posição dos 20 centimos no display
+	MOV R9, 91FH					;Move para R9 a posição do numero de stock de 20 centimos
+	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 5 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	CMP R1, 6						;Compara o PER_EN a ver se é igual a 6(10 Centimos)
+	MOV R0, 665H					;Move para R0 a posição dos 10 centimos no display
+	MOV R9, 92FH					;Move para R9 a posição do numero de stock de 10 centimos
+	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 6 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	
+	JMP Le_Valor						;Caso nao tenha nenhum PER_EN valido fica num ciclo ate ter uma PER_EN valida
+ContinuaCarregar:
+	MOV R4, 30H						;Move para R4 o valor 30H, correspondente a 0
+	MOV R5, 2CH						;Move para R5 o valor 2CH, correspondente a virgula ","
+	MOV R6, 0						;Move para R6 o valor 1, para variavel de controlo
+	MOV R7, 29H						; Move para R7 o valor 29H que corresponde a " ) "
+	MOV R8, 3AH							;
+cicloCarregar:
+	MOVB R1, [R0]
+	MOVB R3, [R2]
+	CMP R1, R5
+	JEQ ProximoDigitoCarrega
+
+	CMP R1, R7
+	JNE ContinuaCicloCarregar
+	MOV R1 , R4
+ContinuaCicloCarregar:	
+	ADD R1, R6
+	MOV R6, 0
+	ADD R1, R3
+	SUB R1, R4
+	CMP R1,R8
+	JGE Substrae10
+	JMP ProximoDigitoCarrega
+
+Substrae10:
+	MOV R3, 10
+	SUB R1, R3
+	ADD R6, 1
+	JMP ProximoDigitoCarrega
+
+ProximoDigitoCarrega:
+	MOV R3, 0DBBH
+	MOVB [R2], R1
+	SUB R0,1
+	SUB R2,1
+	CMP R2,R3
+	JGE cicloCarregar
+	JLT FimCarregamento
+
+FimCarregamento:
+	CALL insereMoeda				;Chama a Rotina insere moeda para inserir as moedas que entram no stock
+	CALL ApresentaSaldoInserido
+	JMP SomaSaldoCartao
+	POP R0							;Restaura o valor de R0
+	
+
+
+ApresentaSaldoInserido:
+	PUSH R0
+	PUSH R1
+	PUSH R2
+	PUSH R3
+
+	MOV R0, 0F4BH
+	MOV R1, 0DBBH
+
+	MOV R3, 0F4FH
+
+cicloApresentaSaldoInserido:
+	MOVB R2, [R1]
+	MOVB [R0], R2
+	ADD R1,1
+	ADD R0,1
+	CMP R0, R3
+	JLE cicloApresentaSaldoInserido
+	JMP FimApresentaSaldoInserido
+
+
+FimApresentaSaldoInserido:
+
+	POP R3
+	POP R2
+	POP R1
+	POP R0
+	RET
+
+
+
+SomaSaldoCartao:
+	MOV R0, 0F4FH
+	MOV R1, ApontadorCartaoaUtilizar
+	MOV R2, [R1]
+	ADD R2, 5
+	ADD R2, 4
+	MOV R4, 30H						;Move para R4 o valor 30H, correspondente a 0
+	MOV R5, 2CH						;Move para R5 o valor 2CH, correspondente a virgula ","
+	MOV R6, 0						;Move para R6 o valor 1, para variavel de controlo
+	mov R7, 0F5FH
+	MOV R8, 3AH						;
+cicloSomaSaldoCartao:
+	MOVB R1, [R0]					; Valor do saldo a carregar
+	MOVB R3, [R2]					; valor do saldo guardado
+	CMP R1, R5
+	JEQ ProximoDigitoSomaSaldoCartao
+
+	ADD R1, R6
+	MOV R6, 0
+	ADD R1, R3
+	SUB R1, R4
+	CMP R1,R8
+	JGE SomaSaldoCartaoSubstrae10
+	JMP ProximoDigitoSomaSaldoCartao
+
+SomaSaldoCartaoSubstrae10:
+	MOV R3, 10
+	SUB R1, R3
+	ADD R6, 1
+	JMP ProximoDigitoSomaSaldoCartao
+
+ProximoDigitoSomaSaldoCartao:
+	MOV R3, 0F4BH
+	MOVB [R7], R1
+	SUB R0,1
+	SUB R2,1
+	SUB R7,1
+	CMP R0,R3
+	JGE cicloSomaSaldoCartao
+	JLT FimSomaSaldoCartao
+
+FimSomaSaldoCartao:
+	POP R0							;Restaura o valor de R0
+	JMP MRecarregar
+
+
+
+AtualizaSaldoCartao:
+	PUSH R0
+	PUSH R1
+	PUSH R2
+	PUSH R3
+
+	MOV R0, 0F5BH
+	MOV R1, ApontadorCartaoaUtilizar
+	MOV R1, [R1]
+	ADD R1, 5
+
+	MOV R3, R1
+	ADD R3, 4
+
+cicloAtualizaSaldoCartao:
+	MOVB R2, [R0]
+	MOVB [R1], R2
+	ADD R1,1
+	ADD R0,1
+	CMP R1, R3
+	JLE cicloAtualizaSaldoCartao
+	JMP FimAtualizaSaldoCartao 
+
+
+FimAtualizaSaldoCartao:
+	POP R3
+	POP R2
+	POP R1
+	POP R0
+	RET
+
+
+
+
+;-----------------------------------------------------------------------------------------------------------------------------------------------------------------	 
 ProssegueTalao:
 JMP ligado
 ;-----------------------------------------------
@@ -676,11 +834,13 @@ Stock:
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Move para R1 o valor de PER_EN
 	CMP R1, 2						;Compara o valor com 2
-	JEQ aux99					;Caso seja igual é feito um salto para o ligado do programa
+	JEQ aux95					;Caso seja igual é feito um salto para o ligado do programa
 	CALL Stocks						;Chama a Rotina Stocks(Que mostra a lista do Stock de troco)
 	JMP ligado					;Salta para o ligado
 
 
+aux95:
+JMP ligado
 ;------------------------------------------------
 MComparBilhete:
 	MOV R2, Menu_Estacoes			;Carrega o endereço do menu de estaçoes
@@ -875,9 +1035,12 @@ cil:
 	MOV R0, PER_EN					;Move para R0 o endereço de memoria do PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara R1 com o valor
-	JEQ	aux							;Se igual volta para o menu incial
+	JEQ	aux101							;Se igual volta para o menu incial
 	JMP cil							;Se não fica em loop
 
+
+aux101:
+JMP ligado
 
 PagaSemPepe:
 	CALL Paga						;Rotina para fazer o pagamento do produto
@@ -989,7 +1152,7 @@ proximoRestante:								;(Proximo digito do saldo restante)
 FimSaldoRestante:
 
 	CMP R8,1						; se a operação acabou e ainda o Carry(R8) conter o valor 1, significa que o saldo no cartão é menor que o valor a pagar
-	JEQ aux							; caso Carry(R8) == 1, manda erro e manda a recarregar --- falta carregar
+	JEQ Erro_MandaCarregar							; caso Carry(R8) == 1, manda erro e manda a recarregar --- falta carregar
 	POP R10							;Restaura o valor de R10
 	POP R9							;Restaura o valor de R9
 	POP R8							;Restaura o valor de R8
@@ -1004,9 +1167,21 @@ FimSaldoRestante:
 	RET								;Vai para o endereço guardado na SP
 
 
-aux:
-JMP ligado
+Erro_MandaCarregar:
+	MOV R2, ErroSaldoInsuficiente			;Carrega o endereço do menu de produtos
+		CALL MostrarDisplay				;Mostra o menu de produtos
+		CALL LimpaPerifericos			;Limpa os perifericos de entrada
+	MandaCarregar: 
+	MOV R0, PER_EN					;Le o endereço de PER_EN
+	MOVB R1, [R0]					;Le o PER_EN da memoria
+	CMP R1, 1						;Compara o PER_EN com o valor 1
+	JEQ	aux101					 ;Opção Cartao para cancelar a compra
+	CMP R1, 2						;Compara o PER_EN com o valor 2
+	JEQ	aux102					 ;Opção Cartao para Recarregar		
+	JMP MandaCarregar
 
+aux102:
+JMP MRecarregar 
 
 AtualizaSaldo:
 	PUSH R0
