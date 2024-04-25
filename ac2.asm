@@ -260,7 +260,7 @@ InserirValor:
 	String "Inserido:  XX,XX"
 	String "                "
 	String "----------------"
-	String "1) Inserir Moeda"
+	String "1) Inserir      "
 	String "2) Continuar    "	
 Place 0D10H
 TalaoPepe:
@@ -289,6 +289,15 @@ TalaoCartaoPepe:
 	String "->              "
 	String "-> Saldo:   1,00"
 	String "->Restante: 1,00"
+	String "----------------"
+	String "1) Continuar    "
+Place 0F10H
+TalaoRecarregamento:
+	String "----------------"
+	String "Cartao Carregado"
+	String "                "
+	String "-> Saldo:   1,00"
+	String "                "
 	String "----------------"
 	String "1) Continuar    "
 
@@ -555,7 +564,7 @@ MBilhete:
 	CMP R1, 1						;Compara o PER_EN com o valor 1
 	JEQ	MBilhete2 					 ;Opção Cartao para continuar				
 	CMP R1, 2						;Compara o PER_EN com o valor 1
-	JEQ	aux100 					 ;Opção Cartao para sair
+	JEQ	aux99 					 ;Opção Cartao para sair
 	JMP CiloBilhete1	
 MBilhete2:
 	MOV R2, Bilhtete2			;Carrega o endereço do menu de produtos
@@ -581,6 +590,7 @@ MBilhete3:
 	JMP CiloBilhete3					
 	
 MRecarregar:
+   CALL CarregaPepe
 	MOV R2, InserirValor			;Carrega o endereço do menu de produtos
 		CALL MostrarDisplay				;Mostra o menu de produtos
 		CALL LimpaPerifericos			;Limpa os perifericos de entrada
@@ -588,14 +598,76 @@ MRecarregar:
 	MOV R0, PER_EN					;Le o endereço de PER_EN
 	MOVB R1, [R0]					;Le o PER_EN da memoria
 	CMP R1, 1						;Compara o PER_EN com o valor 1 para selecionar a opção de inserir moedas
-	JEQ MandaPagar			;Opção Cartao para continuar	
+	JEQ Recarrega			;Opção Cartao para continuar	
 	CMP R1, 2						;Compara o PER_EN com o valor 2 para selecionar a opção de continuar
 	JEQ	ProssegueTalao 			;Opção Cartao para continuar
 	JMP MRecarregar2
 
-MandaPagar:
-JMP Paga	
-	
+Recarrega:
+		MOV R2, TalaoRecarregamento			;Carrega o endereço do menu de produtos
+		CALL MostrarDisplay				;Mostra o menu de produtos
+		CALL LimpaPerifericos			;Limpa os perifericos de entrada
+		MRecarregar22:
+		MOV R0, PER_EN					;Le o endereço de PER_EN
+		MOVB R1, [R0]					;Le o PER_EN da memoria	
+		CMP R1, 1						;Compara o PER_EN com o valor 2 para selecionar a opção de continuar
+		JEQ	ProssegueTalao 			;Opção Cartao para continuar
+		JMP MRecarregar22
+
+CarregaPepe:
+		PUSH R0
+		PUSH R1
+		PUSH R2
+		PUSH R3
+		PUSH R4
+		PUSH R5
+		PUSH R6
+		PUSH R7
+		PUSH R8
+		PUSH R9
+		PUSH R10
+		MOV R2, EntradaCodigoCartao
+		ADD R2, 4H  ; ultimo digito inserido pelo cliente
+		MOV R4, 4009H ;PREÇO ULTIMO DIGITO
+		MOV R6,1 ;VAR CONTROLO
+		MOV R7,30H
+		MOV R8,10
+		ciclo_verifica:
+		MOVB R3,[R2] ;PER
+		MOVB R5,[R4] ;MEMORIA
+		SUB R3,R7
+		SUB R5,R7 ;OBTER PARA DECIMAL
+		ADD R5,R3
+		CMP R5,R8
+		JGE overflow
+		ciclo22:
+		ADD R6,1
+		SUB R4,1
+		SUB R2,1
+		CMP R6,5
+		JEQ over
+		JMP ciclo_verifica
+		overflow:
+		MOV R9,R5
+		SUB R9,R8
+		ADD R4,1
+		MOV R10, [R4]
+		ADD R10,R9
+		MOVB[R4],R10
+		JMP ciclo22
+over:
+POP R10
+POP R9
+POP R8
+POP R7
+POP R6
+POP R5
+POP R4
+POP R3
+POP R2
+POP R1
+POP R0
+RET 
 ProssegueTalao:
 JMP ligado
 ;-----------------------------------------------
@@ -639,7 +711,7 @@ Porto_ciclo:
 	JEQ EstacaoCompaPorto2				;Faz um salto para o comprar o 2 Porto
 	CMP R1, 3						;Compara com o nº3
 	JEQ aux2						;Faz um salto para o comprar o 3 Porto
-	CMP R1, 7						;Compara com o valor para o menu seguinte
+	CMP R1, 7						;Compara com o vMRalor para o menu seguinte
 	JEQ EstacaoPortoAseguir					;Faz um salto para o proximo menu de Porto
 	CMP R1, 0						;Comapra com o valor 0, valor de saida
 	JEQ aux100					;Caso seja igual volta para o ligado
