@@ -639,76 +639,76 @@ CarregaPepe:
 Le_Valor:
 	MOV R0, PER_EN					;Le para R0 o endereço de memoria do PER_EN 
 	MOVB R1, [R0]					;Move para R1 o valor na memoria de R0
-	MOV R2, 0DBFH					;Move Para R2 o endereço do valor introduzido no talao intermedio
+	MOV R2, 0DBFH					;Move Para R2 o endereço do valor introduzido talão
 	CMP R1, 1						;Compara o PER_EN a ver se é igual a 1(5 Euros)
-	MOV R0, 615H						;Move para R0 a posição dos 5 euros no display
+	MOV R0, 615H					;Move para R0 a posição dos 5 euros no display
 	MOV R9, 89FH					;Move para R9 a posição do numero de stock de 5 euros
-	JEQ ContinuaCarregar						;Se o PER_EN for igual a 1 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	JEQ ContinuaCarregar			;Se o PER_EN for igual a 1 vai para ContinuaCarregar (Onde o Programa faz a inserção no stock, no Talao do valor introduzido)
 	CMP R1, 2						;Compara o PER_EN a ver se é igual a 2(2 Euros)
-	MOV R0, 625H						;Move para R0 a posição dos 2 euros no display
+	MOV R0, 625H					;Move para R0 a posição dos 2 euros no display
 	MOV R9, 8AFH					;Move para R9 a posição do numero de stock de 2 euros
-	JEQ ContinuaCarregar						;Se o PER_EN for igual a 2 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	JEQ ContinuaCarregar			;Se o PER_EN for igual a 2 vai para ContinuaCarregar (Onde o Programa faz a inserção no stock, no Talao do valor introduzido)
 	CMP R1, 3						;Compara o PER_EN a ver se é igual a 3(1 Euro)
-	MOV R0, 635H						;Move para R0 a posição dos 1 euro no display
+	MOV R0, 635H					;Move para R0 a posição dos 1 euro no display
 	MOV R9, 8BFH					;Move para R9 a posição do numero de stock de 1 euro
-	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 3 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	JEQ	ContinuaCarregar			;Se o PER_EN for igual a 3 vai para ContinuaCarregar (Onde o Programa faz a inserção no stock, no Talao do valor introduzido)
 	CMP R1, 4						;Compara o PER_EN a ver se é igual a 4(50 Centimos)
-	MOV R0, 645H						;Move para R0 a posição dos 50 centimos no display
+	MOV R0, 645H					;Move para R0 a posição dos 50 centimos no display
 	MOV R9, 8CFH					;Move para R9 a posição do numero de stock de 50 centimos
-	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 4 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	JEQ	ContinuaCarregar			;Se o PER_EN for igual a 4 vai para ContinuaCarregar (Onde o Programa faz a inserção no stock, no Talao do valor introduzido)
 	CMP R1, 5						;Compara o PER_EN a ver se é igual a 5(20 Centimos)
-	MOV R0, 655H						;Move para R0 a posição dos 20 centimos no display
+	MOV R0, 655H					;Move para R0 a posição dos 20 centimos no display
 	MOV R9, 91FH					;Move para R9 a posição do numero de stock de 20 centimos
-	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 5 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	JEQ	ContinuaCarregar			;Se o PER_EN for igual a 5 vai para ContinuaCarregar (Onde o Programa faz a inserção no stock, no Talao do valor introduzido)
 	CMP R1, 6						;Compara o PER_EN a ver se é igual a 6(10 Centimos)
 	MOV R0, 665H					;Move para R0 a posição dos 10 centimos no display
 	MOV R9, 92FH					;Move para R9 a posição do numero de stock de 10 centimos
-	JEQ	ContinuaCarregar						;Se o PER_EN for igual a 6 vai para Pag1 (Onde o Programa faz a inserção no stock, no Talao e no talao intermedio do valor introduzido)
+	JEQ	ContinuaCarregar			;Se o PER_EN for igual a 6 vai para ContinuaCarregar (Onde o Programa faz a inserção no stock, no Talao do valor introduzido)
 	
 	JMP Le_Valor						;Caso nao tenha nenhum PER_EN valido fica num ciclo ate ter uma PER_EN valida
 ContinuaCarregar:
 	MOV R4, 30H						;Move para R4 o valor 30H, correspondente a 0
 	MOV R5, 2CH						;Move para R5 o valor 2CH, correspondente a virgula ","
-	MOV R6, 0						;Move para R6 o valor 1, para variavel de controlo
+	MOV R6, 0						;Move para R6 o valor 0, como Carry 
 	MOV R7, 29H						; Move para R7 o valor 29H que corresponde a " ) "
-	MOV R8, 3AH							;
+	MOV R8, 3AH						;Move para R8 o valor 3AH para saber se o digito introduzido é maior a 9 
 cicloCarregar:
-	MOVB R1, [R0]
-	MOVB R3, [R2]
-	CMP R1, R5
-	JEQ ProximoDigitoCarrega
+	MOVB R1, [R0]					; R1 = o digito do valor introduzido 
+	MOVB R3, [R2] 					; R2 = o digito registado no talão
+	CMP R1, R5						; R1 == ","?
+	JEQ ProximoDigitoCarrega		; se R1 == "," for true, salta para o digito seguinte
 
-	CMP R1, R7
-	JNE ContinuaCicloCarregar
-	MOV R1 , R4
+	CMP R1, R7						; compara R1 com ")"
+	JNE ContinuaCicloCarregar		; caso R1 não seja ")", continua com a execução
+	MOV R1 , R4						; caso R1 == ")", pasa o R1 passa a ser 0( que é representado por 30H)
 ContinuaCicloCarregar:	
-	ADD R1, R6
-	MOV R6, 0
-	ADD R1, R3
-	SUB R1, R4
-	CMP R1,R8
-	JGE Substrae10
+	ADD R1, R6						; R1 = R1 + Carry
+	MOV R6, 0						; Carry = 0 
+	ADD R1, R3						; R1 = R1 + R3 
+	SUB R1, R4						; R1 = R1 - 30H(isto é feito para estar dentro dos valors que correspondem a numeros no display)
+	CMP R1,R8						; compara R1 com 3AH
+	JGE Substrae10					; se R1 for maior ou igual a 3AH significa que o resultado da soma dos dois digitos foi maior que 10, logo, tem de ser adicionado ao seguinte digito
 	JMP ProximoDigitoCarrega
 
 Substrae10:
-	MOV R3, 10
-	SUB R1, R3
-	ADD R6, 1
+	MOV R3, 10						
+	SUB R1, R3						; R1 = R1 - 10 
+	ADD R6, 1						; Carry = 1
 	JMP ProximoDigitoCarrega
 
 ProximoDigitoCarrega:
-	MOV R3, 0DBBH
-	MOVB [R2], R1
-	SUB R0,1
-	SUB R2,1
-	CMP R2,R3
-	JGE cicloCarregar
-	JLT FimCarregamento
+	MOV R3, 0DBBH					
+	MOVB [R2], R1					; guarda no talão o resultado da soma
+	SUB R0,1						; passa para o digito seguinte
+	SUB R2,1						; passa para o digito seguinte
+	CMP R2,R3						
+	JGE cicloCarregar				; caso o endereço do digito seguinte do talão for maior ou igual que o ultimo digito, continua o ciclo
+	JLT FimCarregamento				; caso o endereço do digito seguinte do talão for menor que o endereço do ultimo digito, accaba o ciclo
 
 FimCarregamento:
 	CALL insereMoeda				;Chama a Rotina insere moeda para inserir as moedas que entram no stock
-	CALL ApresentaSaldoInserido
-	JMP SomaSaldoCartao
+	CALL ApresentaSaldoInserido		;chama a rotina que apresenta o saldo inserido no talão final
+	JMP SomaSaldoCartao				; chama a rotina que soma o valor do saldo do cartão pepe com o saldo inserido e o resultado é guardado no talao final
 	POP R0							;Restaura o valor de R0
 	
 
@@ -719,19 +719,19 @@ ApresentaSaldoInserido:
 	PUSH R2
 	PUSH R3
 
-	MOV R0, 0F4BH
-	MOV R1, 0DBBH
+	MOV R0, 0F4BH					; R0 = endereço do primeiro digito do saldo inserido no talao final
+	MOV R1, 0DBBH					; R1 = endereço do primeiro digito do saldo inserido por moedas
 
-	MOV R3, 0F4FH
+	MOV R3, 0F4FH					; R3 = endereço do ultimo digito do saldo inserido 
 
 cicloApresentaSaldoInserido:
 	MOVB R2, [R1]
-	MOVB [R0], R2
-	ADD R1,1
-	ADD R0,1
-	CMP R0, R3
-	JLE cicloApresentaSaldoInserido
-	JMP FimApresentaSaldoInserido
+	MOVB [R0], R2					; guarda o valor do digito do saldo guardado no talão intermedio para o digito do saldo inserido no talão final
+	ADD R1,1						; R1 = endereço do digito seguinte do saldo intermedio(saldo inserido por moedas)
+	ADD R0,1						; R0 = endereço do digito seguinte do saldo no talao final
+	CMP R0, R3						; caso o R0 for maior que o endereço do ultimo digito acaba o ciclo. Logo:
+	JLE cicloApresentaSaldoInserido	; caso R0 < ou = que R3, continua o ciclo
+	JMP FimApresentaSaldoInserido	; caso contrario acaba a ciclo
 
 
 FimApresentaSaldoInserido:
@@ -745,45 +745,45 @@ FimApresentaSaldoInserido:
 
 
 SomaSaldoCartao:
-	MOV R0, 0F4FH
-	MOV R1, ApontadorCartaoaUtilizar
-	MOV R2, [R1]
+	MOV R0, 0F4FH					; posição de memoria onde está guardado o saldo inserido
+	MOV R1, ApontadorCartaoaUtilizar  
+	MOV R2, [R1]					; R2 = endereço do cartão pepe a ser utilizado	
 	ADD R2, 5
-	ADD R2, 4
+	ADD R2, 4						; R2 = ultimo digito do saldo do cartão pepe a ser utilizado
 	MOV R4, 30H						;Move para R4 o valor 30H, correspondente a 0
 	MOV R5, 2CH						;Move para R5 o valor 2CH, correspondente a virgula ","
-	MOV R6, 0						;Move para R6 o valor 1, para variavel de controlo
-	mov R7, 0F5FH
-	MOV R8, 3AH						;
+	MOV R6, 0						;Move para R6 o valor 0, o R6 representa o Carry
+	mov R7, 0F5FH					; R7 = posição de memoria onde será guardado o resultado da soma
+	MOV R8, 3AH						; R8 = 3AH
 cicloSomaSaldoCartao:
 	MOVB R1, [R0]					; Valor do saldo a carregar
-	MOVB R3, [R2]					; valor do saldo guardado
-	CMP R1, R5
-	JEQ ProximoDigitoSomaSaldoCartao
+	MOVB R3, [R2]					; valor do saldo guardado no pepe
+	CMP R1, R5						; R1 == "," ? 
+	JEQ ProximoDigitoSomaSaldoCartao; caso True, salta para o proximo digito 
 
-	ADD R1, R6
-	MOV R6, 0
-	ADD R1, R3
-	SUB R1, R4
-	CMP R1,R8
-	JGE SomaSaldoCartaoSubstrae10
-	JMP ProximoDigitoSomaSaldoCartao
+	ADD R1, R6						; R1 = R1 + Carry
+	MOV R6, 0						; Carry = 0 
+	ADD R1, R3						
+	SUB R1, R4						; R1 = (R1 + R3) - 30H
+	CMP R1,R8						
+	JGE SomaSaldoCartaoSubstrae10	; caso R1 for maior que 3AH, significa que tem de ser retirado 10 ao digito e colocar o carry a 1 para ser adicionado ao digito seguinte
+	JMP ProximoDigitoSomaSaldoCartao; caso contrario, salta para o proximo digito
 
 SomaSaldoCartaoSubstrae10:
-	MOV R3, 10
-	SUB R1, R3
-	ADD R6, 1
+	MOV R3, 10						
+	SUB R1, R3						; R1 = R1 - 10
+	ADD R6, 1						; Carry = 1
 	JMP ProximoDigitoSomaSaldoCartao
 
 ProximoDigitoSomaSaldoCartao:
 	MOV R3, 0F4BH
-	MOVB [R7], R1
-	SUB R0,1
-	SUB R2,1
-	SUB R7,1
-	CMP R0,R3
-	JGE cicloSomaSaldoCartao
-	JLT FimSomaSaldoCartao
+	MOVB [R7], R1					; É guardado no talão o resultado da soma
+	SUB R0,1						; R0 = endereço do digito seguinte
+	SUB R2,1						; R2 = endereço do digito seguinte
+	SUB R7,1						; R7 = endereço do digito seguinte 
+	CMP R0,R3						; Caso ainda não tenham sido avaliados todos os digitos:
+	JGE cicloSomaSaldoCartao		; continua o ciclo
+	JLT FimSomaSaldoCartao			; caso contrario finaliza o ciclo
 
 FimSomaSaldoCartao:
 	POP R0							;Restaura o valor de R0
@@ -800,19 +800,19 @@ AtualizaSaldoCartao:
 	MOV R0, 0F5BH
 	MOV R1, ApontadorCartaoaUtilizar
 	MOV R1, [R1]
-	ADD R1, 5
+	ADD R1, 5							; R1 = endereço do primeiro digito do saldo do cartão pepe a ser utilizado
 
 	MOV R3, R1
-	ADD R3, 4
+	ADD R3, 4							; R3 = endereço do ultimo digito do saldo do cartão pepe a ser utilizado
 
 cicloAtualizaSaldoCartao:
-	MOVB R2, [R0]
-	MOVB [R1], R2
-	ADD R1,1
-	ADD R0,1
-	CMP R1, R3
-	JLE cicloAtualizaSaldoCartao
-	JMP FimAtualizaSaldoCartao 
+	MOVB R2, [R0]						
+	MOVB [R1], R2						; atualiza o saldo do pepe guardado no cartão
+	ADD R1,1							; R1 = endereço do seguinte digito 
+	ADD R0,1							; R0 = endereço do seguinte digito
+	CMP R1, R3							; caso ainda não tenham sido guardado todos os digitos no cartão pepe
+	JLE cicloAtualizaSaldoCartao		; continua o ciclo 
+	JMP FimAtualizaSaldoCartao 			; caso contrario acaba o ciclo
 
 
 FimAtualizaSaldoCartao:
@@ -1050,43 +1050,43 @@ PagaSemPepe:
 	JMP FimEstacoes
 
 PagaComPepe:
-	MOV R6, ApontadorCartaoaUtilizar
+	MOV R6, ApontadorCartaoaUtilizar  	
 	
 adicionaCodigoTalao:
-	MOV R0, [R6]
-	MOV R1, 0E90H
-	MOV R3, R0
-	ADD R3, 4
-	MOV R2, 19H
-	ADD R1,R2
+	MOV R0, [R6]					; Guarda em R0 o endereço do Cartão Pepe a ser utilizado
+	MOV R1, 0E90H					; guarda em R1 o endereço onde está guardado o talão da compra com cartão pepe
+	MOV R3, R0						
+	ADD R3, 4						; R3 = endereço onde acaba o codigo do cartão pepe a ser utilizado
+	MOV R2, 19H						
+	ADD R1,R2						; R1 = endereço onde deverá de escrever o codigo pepe
 
-cicloAdicionaCodigoTalao:	
-	MOVB R4,[R0]
+cicloAdicionaCodigoTalao:			; escreve no lugar definido do talão o codigo do cartão pepe a ser utilizado
+	MOVB R4,[R0]					
 	MOVB [R1], R4
 	ADD R0,1
 	ADD R1,1
-	CMP R0,R3
-	JLE cicloAdicionaCodigoTalao
+	CMP R0,R3						
+	JLE cicloAdicionaCodigoTalao	; se endereço a ser avaliado for maior que o ulimo endereço do codigo PEPE, o ciclo acaba. Caso contrario continua para o proximo endereço
 
-AdicionaSaldo:	
+AdicionaSaldo:						
 
 	MOV R1, 0E90H
 	MOV R2, 3BH
-	ADD R1, R2
-	MOV R3, R0
-	ADD R3, 4
-cicloAdicionaSaldo:
+	ADD R1, R2						; R1 = o endereço onde deverá ser escrito o saldo do cartão pepe
+	MOV R3, R0						; o R0 guarda o endereço onde começa o saldo do cartão pepe
+	ADD R3, 4						; R3 = endereço onde acaba o saldo do cartão pepe a ser utilizado
+cicloAdicionaSaldo:					; adiciona o saldo do cartão pepe a ser utilizado ao talão
 	MOVB R4,[R0]
 	MOVB [R1], R4
 	ADD R0,1
 	ADD R1,1
 	CMP R0,R3
-	JLE cicloAdicionaSaldo
+	JLE cicloAdicionaSaldo			; se endereço a ser avaliado for maior que o ulimo endereço do saldo do cartão PEPE, o ciclo acaba. Caso contrario continua para o proximo endereço
 
 
 FimPagamentoComPepe:
-	CALL SaldoRestante
-	CALL AtualizaSaldo
+	CALL SaldoRestante				;Calcula e atualiza no talão o saldo restante após a compra
+	CALL AtualizaSaldo				;Guarda no cartão pepe o saldo, assim finalizando a transação
 	MOV R2, TalaoCartaoPepe					;Move para R2 o endereço do display do talao
 	JMP FimEstacoes
 
